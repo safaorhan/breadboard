@@ -63,7 +63,8 @@ body {
 }
 
 #add-component-form input,
-#add-component-form textarea {
+#add-component-form textarea,
+#add-component-form select {
   background: #1a1a1a;
   border: 1px solid #444;
   color: #e0e0e0;

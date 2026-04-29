@@ -185,13 +185,15 @@ function renderPlacedComponent(
   def: ComponentDef,
   selectedId: string | null,
 ): void {
-  const topPos    = getHolePosition(`E${placed.anchorCol}`)
-  const bottomPos = getHolePosition(`F${placed.anchorCol + def.colSpan - 1}`)
+  const yVals = def.pins.map(p => MARGIN_TOP + ROW_Y_UNITS[p.row] * PITCH)
+  const minY  = Math.min(...yVals)
+  const maxY  = Math.max(...yVals)
+  const anchorX = MARGIN_LEFT + (placed.anchorCol - 1) * PITCH
 
-  const x = topPos.x - HOLE_RADIUS - 1
-  const y = topPos.y - HOLE_RADIUS - 1
+  const x = anchorX - HOLE_RADIUS - 1
+  const y = minY - HOLE_RADIUS - 1
   const w = (def.colSpan - 1) * PITCH + HOLE_RADIUS * 2 + 2
-  const h = (bottomPos.y - topPos.y) + HOLE_RADIUS * 2 + 2
+  const h = (maxY - minY) + HOLE_RADIUS * 2 + 2
 
   const g = svgEl('g')
   g.dataset.componentId = placed.id
@@ -255,13 +257,15 @@ export function renderGhostComponent(svg: SVGSVGElement, def: ComponentDef, anch
   clearLayer(svg, 'preview-layer')
   const layer = getLayer(svg, 'preview-layer')
 
-  const topPos    = getHolePosition(`E${anchorCol}`)
-  const bottomPos = getHolePosition(`F${anchorCol + def.colSpan - 1}`)
+  const yVals = def.pins.map(p => MARGIN_TOP + ROW_Y_UNITS[p.row] * PITCH)
+  const minY  = Math.min(...yVals)
+  const maxY  = Math.max(...yVals)
+  const anchorX = MARGIN_LEFT + (anchorCol - 1) * PITCH
 
-  const x = topPos.x - HOLE_RADIUS - 1
-  const y = topPos.y - HOLE_RADIUS - 1
+  const x = anchorX - HOLE_RADIUS - 1
+  const y = minY - HOLE_RADIUS - 1
   const w = (def.colSpan - 1) * PITCH + HOLE_RADIUS * 2 + 2
-  const h = (bottomPos.y - topPos.y) + HOLE_RADIUS * 2 + 2
+  const h = (maxY - minY) + HOLE_RADIUS * 2 + 2
 
   const rect = svgEl('rect')
   rect.setAttribute('x', String(x))

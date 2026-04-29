@@ -1,7 +1,7 @@
 export interface PinDef {
   name: string
   col: number        // column offset from anchorCol (0-based)
-  row: 'top' | 'bottom'
+  row: string  // actual row letter: 'A'–'J'
 }
 
 export interface ComponentDef {

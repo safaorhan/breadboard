@@ -23,6 +23,22 @@
           <input id="comp-colspan" type="number" min="1" max="40" placeholder="e.g. 4" required />
         </label>
         <label>
+          Top row
+          <select id="comp-top-row">
+            <option>A</option><option>B</option><option>C</option><option>D</option>
+            <option selected>E</option><option>F</option><option>G</option>
+            <option>H</option><option>I</option><option>J</option>
+          </select>
+        </label>
+        <label>
+          Bottom row
+          <select id="comp-bottom-row">
+            <option>A</option><option>B</option><option>C</option><option>D</option>
+            <option>E</option><option selected>F</option><option>G</option>
+            <option>H</option><option>I</option><option>J</option>
+          </select>
+        </label>
+        <label>
           Pins (one per line, top row left→right then bottom row left→right)
           <textarea id="comp-pins" rows="6" placeholder="VCC&#10;GND&#10;SDA&#10;SCL"></textarea>
         </label>
