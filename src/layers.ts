@@ -1,30 +1,44 @@
 import type { PlacedComponent, ComponentDef } from './types'
 
+// Lucide-style icons (24×24 viewBox, stroke-based)
 const ICON = {
-  eyeOpen: `<svg width="14" height="14" viewBox="0 0 14 14" fill="none" xmlns="http://www.w3.org/2000/svg">
-    <path d="M1 7c1.5-3.5 4-5 6-5s4.5 1.5 6 5c-1.5 3.5-4 5-6 5S2.5 10.5 1 7z" stroke="currentColor" stroke-width="1.25" stroke-linejoin="round"/>
-    <circle cx="7" cy="7" r="1.75" fill="currentColor"/>
+  eyeOpen: `<svg width="14" height="14" viewBox="0 0 24 24" fill="none"
+      stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+      style="pointer-events:none">
+    <path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7z"/>
+    <circle cx="12" cy="12" r="3"/>
   </svg>`,
 
-  eyeClosed: `<svg width="14" height="14" viewBox="0 0 14 14" fill="none" xmlns="http://www.w3.org/2000/svg">
-    <path d="M1.5 1.5l11 11" stroke="currentColor" stroke-width="1.25" stroke-linecap="round"/>
-    <path d="M5 4.2A6.6 6.6 0 001 7c1.5 3.5 4 5 6 5a6 6 0 003.3-1M9.5 5.5C10.5 6 11.5 6.6 13 7c-.8 1.8-2.2 3.3-4 4.1" stroke="currentColor" stroke-width="1.25" stroke-linecap="round"/>
+  eyeClosed: `<svg width="14" height="14" viewBox="0 0 24 24" fill="none"
+      stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+      style="pointer-events:none">
+    <path d="M17.94 17.94A10.07 10.07 0 0112 20c-7 0-10-8-10-8a18.45 18.45 0 015.06-5.94"/>
+    <path d="M9.9 4.24A9.12 9.12 0 0112 4c7 0 10 8 10 8a18.5 18.5 0 01-2.16 3.19"/>
+    <line x1="1" y1="1" x2="23" y2="23"/>
   </svg>`,
 
-  lockClosed: `<svg width="14" height="14" viewBox="0 0 14 14" fill="none" xmlns="http://www.w3.org/2000/svg">
-    <rect x="3" y="6.5" width="8" height="5.5" rx="1.25" stroke="currentColor" stroke-width="1.25"/>
-    <path d="M4.75 6.5V5A2.25 2.25 0 019.25 5v1.5" stroke="currentColor" stroke-width="1.25" stroke-linecap="round"/>
+  lockClosed: `<svg width="14" height="14" viewBox="0 0 24 24" fill="none"
+      stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+      style="pointer-events:none">
+    <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/>
+    <path d="M7 11V7a5 5 0 0110 0v4"/>
   </svg>`,
 
-  lockOpen: `<svg width="14" height="14" viewBox="0 0 14 14" fill="none" xmlns="http://www.w3.org/2000/svg">
-    <rect x="3" y="6.5" width="8" height="5.5" rx="1.25" stroke="currentColor" stroke-width="1.25"/>
-    <path d="M4.75 6.5V5A2.25 2.25 0 019.25 5" stroke="currentColor" stroke-width="1.25" stroke-linecap="round"/>
+  lockOpen: `<svg width="14" height="14" viewBox="0 0 24 24" fill="none"
+      stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+      style="pointer-events:none">
+    <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/>
+    <path d="M7 11V7a5 5 0 019.9-1"/>
   </svg>`,
 
-  trash: `<svg width="14" height="14" viewBox="0 0 14 14" fill="none" xmlns="http://www.w3.org/2000/svg">
-    <path d="M2.5 4.5h9" stroke="currentColor" stroke-width="1.25" stroke-linecap="round"/>
-    <path d="M5.5 4.5V3h3v1.5" stroke="currentColor" stroke-width="1.25" stroke-linecap="round" stroke-linejoin="round"/>
-    <path d="M5.5 4.5l.5 7h2l.5-7" stroke="currentColor" stroke-width="1.25" stroke-linecap="round" stroke-linejoin="round"/>
+  trash: `<svg width="14" height="14" viewBox="0 0 24 24" fill="none"
+      stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+      style="pointer-events:none">
+    <polyline points="3 6 5 6 21 6"/>
+    <path d="M19 6l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6"/>
+    <path d="M10 11v6"/>
+    <path d="M14 11v6"/>
+    <path d="M9 6V4a1 1 0 011-1h4a1 1 0 011 1v2"/>
   </svg>`,
 }
 
@@ -38,7 +52,7 @@ export function renderLayersPanel(
 
   if (placedComponents.length === 0) {
     const empty = document.createElement('li')
-    empty.className = 'layer-empty'
+    empty.className  = 'layer-empty'
     empty.textContent = 'No components placed'
     list.appendChild(empty)
     return
@@ -62,8 +76,8 @@ export function renderLayersPanel(
 
     const actions = document.createElement('div')
     actions.className = 'layer-actions'
-    actions.appendChild(iconBtn(placed.hidden ? ICON.eyeClosed : ICON.eyeOpen, placed.hidden ? 'Show' : 'Hide', 'layer-btn', placed.id, 'visibility'))
-    actions.appendChild(iconBtn(placed.locked ? ICON.lockClosed : ICON.lockOpen, placed.locked ? 'Unlock' : 'Lock', placed.locked ? 'layer-btn active' : 'layer-btn', placed.id, 'lock'))
+    actions.appendChild(iconBtn(placed.hidden ? ICON.eyeClosed : ICON.eyeOpen,  placed.hidden ? 'Show'   : 'Hide',   'layer-btn',               placed.id, 'visibility'))
+    actions.appendChild(iconBtn(placed.locked ? ICON.lockClosed : ICON.lockOpen, placed.locked ? 'Unlock' : 'Lock',  placed.locked ? 'layer-btn active' : 'layer-btn', placed.id, 'lock'))
     actions.appendChild(iconBtn(ICON.trash, 'Remove', 'layer-btn layer-btn-del', placed.id, 'delete'))
 
     li.appendChild(name)
@@ -74,10 +88,10 @@ export function renderLayersPanel(
 
 function iconBtn(svg: string, title: string, className: string, compId: string, action: string): HTMLButtonElement {
   const btn = document.createElement('button')
-  btn.innerHTML       = svg
-  btn.title           = title
-  btn.className       = className
-  btn.dataset.compId  = compId
-  btn.dataset.action  = action
+  btn.innerHTML      = svg
+  btn.title          = title
+  btn.className      = className
+  btn.dataset.compId = compId
+  btn.dataset.action = action
   return btn
 }

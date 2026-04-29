@@ -134,20 +134,18 @@ document.addEventListener('click', (e) => {
 
 layersList.addEventListener('click', (e) => {
   const target = e.target as HTMLElement
-  const compId = target.dataset.compId
+  const li     = target.closest('.layer-item')  as HTMLElement | null
+  const btn    = target.closest('[data-action]') as HTMLElement | null
+  if (!li) return
+  const compId = li.dataset.compId
   if (!compId) return
   e.stopPropagation()
 
-  const action = target.dataset.action
-  if (action === 'visibility') {
-    toggleComponentVisibility(compId)
-  } else if (action === 'lock') {
-    toggleComponentLock(compId)
-  } else if (action === 'delete') {
-    removeComponent(compId)
-  } else {
-    selectItem(compId, 'component')
-  }
+  const action = btn?.dataset.action
+  if (action === 'visibility')  toggleComponentVisibility(compId)
+  else if (action === 'lock')   toggleComponentLock(compId)
+  else if (action === 'delete') removeComponent(compId)
+  else                          selectItem(compId, 'component')
 })
 
 // --- Sidebar ---
