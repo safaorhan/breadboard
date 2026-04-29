@@ -279,9 +279,13 @@ body {
   text-transform: uppercase;
   letter-spacing: 0.05em;
 }
-#table-inner td { color: var(--text-2); }
+#table-inner td { color: var(--text-2); vertical-align: top; }
 #table-inner tr:nth-child(even) td { background: var(--bg-raised); }
-#table-inner p { color: var(--text-3); font-style: italic; font-size: 11px; padding: 4px 0; }
+#table-inner p  { color: var(--text-3); font-style: italic; font-size: 11px; padding: 4px 0; }
+#table-inner .net-label { font-weight: 600; color: var(--text-3); font-size: 10px; text-transform: uppercase; letter-spacing: 0.05em; white-space: nowrap; }
+#table-inner .comp-name { font-weight: 500; color: var(--text-1); }
+#table-inner .pin-name  { font-family: 'SF Mono', 'Menlo', 'Consolas', monospace; font-size: 11px; color: var(--accent); }
+#table-inner .net-arrow { color: var(--text-3); font-size: 10px; }
 
 /* ─── Right layers panel ────────────────────────────────────────────────── */
 #layers-panel {
