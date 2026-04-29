@@ -58,6 +58,8 @@ zoomInBtn.addEventListener('click',  () => setZoom(zoomLevel * 1.25))
 zoomOutBtn.addEventListener('click', () => setZoom(zoomLevel / 1.25))
 zoomLabel.addEventListener('click',  () => setZoom(1))
 
+let editingDefId: string | null = null
+
 function update(): void {
   render(svg, state)
   renderSidebar(sidebarList, state.componentLibrary, editingDefId)
@@ -148,8 +150,6 @@ layersList.addEventListener('click', (e) => {
 })
 
 // --- Sidebar + edit mode ---
-
-let editingDefId: string | null = null
 
 const formPanelLabel = document.getElementById('form-panel-label') as HTMLDivElement
 const submitBtn      = document.getElementById('form-submit-btn')  as HTMLButtonElement
