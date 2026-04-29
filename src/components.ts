@@ -9,13 +9,13 @@ export function getComponentPinHole(placed: PlacedComponent, pin: PinDef, def: C
 }
 
 // ESP32-WROOM-32 DevKit v1 (30-pin, 15 per side, 15 columns wide)
-// Placed straddling the center channel: top pins at anchorRow, bottom pins at anchorRow + rowSpan
-// Default anchorRow = 'E', rowSpan = 2 → top at E, bottom at F
+// rowSpan = 8: B(y-unit 4) → I(y-unit 12), difference = 8
+// Place with anchorRow='B' to land top pins at B and bottom pins at I
 const ESP32: ComponentDef = {
   id: 'preset-esp32',
   name: 'ESP32',
   colSpan: 15,
-  rowSpan: 2,
+  rowSpan: 8,
   pins: [
     { name: 'GND',  col: 0,  row: 'top' },
     { name: '3V3',  col: 1,  row: 'top' },
