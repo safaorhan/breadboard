@@ -3,6 +3,7 @@ import { initSVG, render, renderSidebar } from './render'
 import { initDrag, startPlacement, cancelCurrentDrag, deleteSelected } from './drag'
 import { analyzeNets } from './nets'
 import { renderTable } from './table'
+import { MARGIN_LEFT, MARGIN_TOP, PITCH, HOLE_RADIUS, ROW_Y_UNITS } from './board'
 
 const canvasContainer = document.getElementById('canvas-container') as HTMLDivElement
 const tableInner      = document.getElementById('table-inner')      as HTMLDivElement
@@ -49,13 +50,36 @@ svg.addEventListener('contextmenu', (e) => {
   e.preventDefault()
   const target = e.target as SVGElement
   const compEl = target.closest('[data-component-id]') as SVGElement | null
-  if (compEl?.dataset.componentId) {
-    showContextMenu(e.clientX, e.clientY, compEl.dataset.componentId)
+  const compId = compEl?.dataset.componentId ?? lockedComponentAt(e.clientX, e.clientY)
+  if (compId) {
+    showContextMenu(e.clientX, e.clientY, compId)
   } else {
     hideContextMenu()
     cancelCurrentDrag()
   }
 })
+
+function clientToSVG(clientX: number, clientY: number): { x: number; y: number } {
+  const rect = svg.getBoundingClientRect()
+  const scaleX = parseFloat(svg.getAttribute('width')  ?? '1') / rect.width
+  const scaleY = parseFloat(svg.getAttribute('height') ?? '1') / rect.height
+  return { x: (clientX - rect.left) * scaleX, y: (clientY - rect.top) * scaleY }
+}
+
+function lockedComponentAt(clientX: number, clientY: number): string | null {
+  const { x, y } = clientToSVG(clientX, clientY)
+  for (const placed of state.placedComponents) {
+    if (!placed.locked) continue
+    const def = state.componentLibrary.find(d => d.id === placed.defId)
+    if (!def) continue
+    const bx = MARGIN_LEFT + (placed.anchorCol - 1) * PITCH - HOLE_RADIUS - 1
+    const by = MARGIN_TOP  + ROW_Y_UNITS[placed.anchorRow] * PITCH - HOLE_RADIUS - 1
+    const bw = (def.colSpan - 1) * PITCH + HOLE_RADIUS * 2 + 2
+    const bh = def.rowSpan  * PITCH + HOLE_RADIUS * 2 + 2
+    if (x >= bx && x <= bx + bw && y >= by && y <= by + bh) return placed.id
+  }
+  return null
+}
 
 document.addEventListener('click', (e) => {
   if (!ctxMenu.contains(e.target as Node)) hideContextMenu()
