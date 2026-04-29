@@ -144,7 +144,7 @@ body {
 .component-body:hover { stroke: #6aaa6a; }
 
 .component-label { fill: #88ff88; font-size: 8px; font-family: monospace; pointer-events: none; }
-.pin-label { fill: #aaffaa; font-size: 6px; font-family: monospace; pointer-events: none; }
+.pin-label { fill: #aaffaa; font-size: 5px; font-family: monospace; pointer-events: none; }
 .pin-hole { fill: #888; stroke: none; pointer-events: all; cursor: crosshair; }
 .pin-hole:hover { fill: #88aaff; }
 
