@@ -1,0 +1,163 @@
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  font-family: system-ui, sans-serif;
+  font-size: 13px;
+  background: #1a1a1a;
+  color: #e0e0e0;
+  height: 100vh;
+  overflow: hidden;
+}
+
+#app {
+  display: flex;
+  height: 100vh;
+}
+
+#sidebar {
+  width: 200px;
+  min-width: 200px;
+  background: #242424;
+  border-right: 1px solid #333;
+  padding: 12px;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+#sidebar h2 { font-size: 14px; color: #aaa; text-transform: uppercase; letter-spacing: 0.05em; }
+#sidebar h3 { font-size: 12px; color: #888; text-transform: uppercase; letter-spacing: 0.05em; margin-top: 4px; }
+
+#component-list {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+#component-list li {
+  padding: 6px 8px;
+  background: #333;
+  border-radius: 4px;
+  cursor: pointer;
+  user-select: none;
+  font-size: 12px;
+}
+
+#component-list li:hover { background: #444; }
+#component-list li.active { background: #2a5a8a; }
+
+#add-component-form {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+#add-component-form label {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  font-size: 11px;
+  color: #999;
+}
+
+#add-component-form input,
+#add-component-form textarea {
+  background: #1a1a1a;
+  border: 1px solid #444;
+  color: #e0e0e0;
+  border-radius: 3px;
+  padding: 4px 6px;
+  font-size: 12px;
+  font-family: inherit;
+}
+
+#add-component-form button {
+  background: #2a5a8a;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  padding: 6px;
+  cursor: pointer;
+  font-size: 12px;
+}
+
+#add-component-form button:hover { background: #3a6a9a; }
+
+#main {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  overflow: auto;
+  padding: 16px;
+  gap: 16px;
+}
+
+#canvas-container svg {
+  display: block;
+  cursor: crosshair;
+}
+
+#canvas-container svg.placing { cursor: cell; }
+
+#table-container h3 {
+  font-size: 12px;
+  color: #888;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin-bottom: 8px;
+}
+
+#table-inner table {
+  border-collapse: collapse;
+  font-size: 12px;
+  width: 100%;
+}
+
+#table-inner th, #table-inner td {
+  border: 1px solid #333;
+  padding: 4px 8px;
+  text-align: left;
+}
+
+#table-inner th { background: #2a2a2a; color: #aaa; }
+#table-inner tr:nth-child(even) { background: #1e1e1e; }
+
+/* SVG styles */
+.hole { fill: #1a1a1a; stroke: #555; stroke-width: 0.5; cursor: crosshair; }
+.hole:hover { stroke: #88aaff; stroke-width: 1.5; }
+.hole.occupied { fill: #2a2a2a; }
+.power-hole { fill: #1a1a1a; stroke: #666; stroke-width: 0.5; }
+.top-plus-hole  { stroke: #cc3333; }
+.top-minus-hole { stroke: #4444cc; }
+.bottom-plus-hole  { stroke: #cc3333; }
+.bottom-minus-hole { stroke: #4444cc; }
+
+.component-body {
+  fill: #2d4a2d;
+  stroke: #4a7a4a;
+  stroke-width: 1;
+  cursor: move;
+}
+.component-body.selected { stroke: #88ffaa; stroke-width: 2; }
+.component-body:hover { stroke: #6aaa6a; }
+
+.component-label { fill: #88ff88; font-size: 8px; font-family: monospace; pointer-events: none; }
+.pin-label { fill: #aaffaa; font-size: 6px; font-family: monospace; pointer-events: none; }
+.pin-hole { fill: #888; stroke: none; pointer-events: all; cursor: crosshair; }
+.pin-hole:hover { fill: #88aaff; }
+
+.wire { stroke: #4488ff; stroke-width: 1.5; stroke-linecap: round; cursor: pointer; }
+.wire:hover { stroke: #88aaff; stroke-width: 2; }
+.wire.selected { stroke: #ffaa44; stroke-width: 2; }
+
+.preview-wire { stroke: #88aaff; stroke-width: 1.5; stroke-dasharray: 4 3; pointer-events: none; }
+.ghost-body { fill: #2d4a2d; stroke: #88ffaa; stroke-width: 1; opacity: 0.6; pointer-events: none; }
+
+.board-bg-top    { fill: #1e2e1e; }
+.board-bg-bottom { fill: #1e2e1e; }
+.rail-bg-plus    { fill: #2a1a1a; }
+.rail-bg-minus   { fill: #1a1a2a; }
+
+.col-label, .row-label { fill: #555; font-size: 7px; font-family: monospace; user-select: none; pointer-events: none; }
