@@ -48,23 +48,6 @@ body {
 #component-list li:hover { background: #444; }
 #component-list li.active { background: #2a5a8a; }
 
-#lock-btn {
-  background: #333;
-  color: #aaa;
-  border: 1px solid #555;
-  border-radius: 4px;
-  padding: 5px 8px;
-  cursor: pointer;
-  font-size: 11px;
-  text-align: left;
-  width: 100%;
-}
-#lock-btn:hover { background: #444; }
-#lock-btn.locked {
-  background: #3a2a0a;
-  border-color: #aa7722;
-  color: #ffcc66;
-}
 
 #add-component-form {
   display: flex;
@@ -162,6 +145,28 @@ body {
 }
 .component-body.selected { stroke: #88ffaa; stroke-width: 2; }
 .component-body:hover { stroke: #6aaa6a; }
+.component-body.locked { stroke: #aa7722; stroke-dasharray: 4 2; cursor: default; }
+
+#context-menu {
+  position: fixed;
+  background: #2a2a2a;
+  border: 1px solid #555;
+  border-radius: 4px;
+  padding: 4px 0;
+  min-width: 130px;
+  z-index: 100;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.6);
+  display: none;
+}
+#context-menu.visible { display: block; }
+#context-menu ul { list-style: none; margin: 0; padding: 0; }
+#context-menu li {
+  padding: 6px 12px;
+  cursor: pointer;
+  font-size: 12px;
+  color: #e0e0e0;
+}
+#context-menu li:hover { background: #3a3a3a; }
 
 .component-label { fill: #88ff88; font-size: 8px; font-family: monospace; pointer-events: none; }
 .pin-label { fill: #aaffaa; font-size: 5px; font-family: monospace; pointer-events: none; }

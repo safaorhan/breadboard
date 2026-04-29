@@ -23,7 +23,6 @@ export function initDrag(svgEl: SVGSVGElement): void {
   svg.addEventListener('mousemove',  onMouseMove)
   svg.addEventListener('mouseup',    onMouseUp)
   svg.addEventListener('click',      onSVGClick)
-  svg.addEventListener('contextmenu', e => { e.preventDefault(); cancelCurrentDrag() })
 }
 
 export function startPlacement(defId: string): void {
@@ -103,10 +102,10 @@ function onMouseDown(e: MouseEvent): void {
     return
   }
 
-  if (target.dataset.componentId && dragMode.mode === 'idle' && !state.componentsLocked) {
+  if (target.dataset.componentId && dragMode.mode === 'idle') {
     e.stopPropagation()
     const comp = state.placedComponents.find(c => c.id === target.dataset.componentId)
-    if (comp) {
+    if (comp && !comp.locked) {
       selectItem(comp.id, 'component')
       const { x, y } = getSVGPoint(e)
       dragMode = {

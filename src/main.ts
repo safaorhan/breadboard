@@ -1,4 +1,4 @@
-import { state, onStateChange, addComponentDef, toggleComponentsLock } from './state'
+import { state, onStateChange, addComponentDef, toggleComponentLock } from './state'
 import { initSVG, render, renderSidebar } from './render'
 import { initDrag, startPlacement, cancelCurrentDrag, deleteSelected } from './drag'
 import { analyzeNets } from './nets'
@@ -7,7 +7,8 @@ import { renderTable } from './table'
 const canvasContainer = document.getElementById('canvas-container') as HTMLDivElement
 const tableInner      = document.getElementById('table-inner')      as HTMLDivElement
 const sidebarList     = document.getElementById('component-list')   as HTMLUListElement
-const lockBtn         = document.getElementById('lock-btn')         as HTMLButtonElement
+const ctxMenu         = document.getElementById('context-menu')     as HTMLDivElement
+const ctxLockItem     = document.getElementById('ctx-toggle-lock')  as HTMLLIElement
 
 const svg = initSVG(canvasContainer)
 initDrag(svg)
@@ -16,12 +17,51 @@ function update(): void {
   render(svg, state)
   renderSidebar(sidebarList, state.componentLibrary)
   renderTable(tableInner, analyzeNets(state))
-  lockBtn.textContent = state.componentsLocked ? 'Unlock components' : 'Lock components'
-  lockBtn.classList.toggle('locked', state.componentsLocked)
 }
 
 onStateChange(update)
 update()
+
+// --- Context menu ---
+
+let ctxTargetId: string | null = null
+
+function showContextMenu(clientX: number, clientY: number, compId: string): void {
+  ctxTargetId = compId
+  const comp = state.placedComponents.find(c => c.id === compId)
+  ctxLockItem.textContent = comp?.locked ? 'Unlock' : 'Lock'
+  ctxMenu.style.left = `${clientX}px`
+  ctxMenu.style.top  = `${clientY}px`
+  ctxMenu.classList.add('visible')
+}
+
+function hideContextMenu(): void {
+  ctxMenu.classList.remove('visible')
+  ctxTargetId = null
+}
+
+ctxLockItem.addEventListener('click', () => {
+  if (ctxTargetId) toggleComponentLock(ctxTargetId)
+  hideContextMenu()
+})
+
+svg.addEventListener('contextmenu', (e) => {
+  e.preventDefault()
+  const target = e.target as SVGElement
+  const compEl = target.closest('[data-component-id]') as SVGElement | null
+  if (compEl?.dataset.componentId) {
+    showContextMenu(e.clientX, e.clientY, compEl.dataset.componentId)
+  } else {
+    hideContextMenu()
+    cancelCurrentDrag()
+  }
+})
+
+document.addEventListener('click', (e) => {
+  if (!ctxMenu.contains(e.target as Node)) hideContextMenu()
+})
+
+// --- Sidebar ---
 
 sidebarList.addEventListener('click', (e) => {
   const li = (e.target as HTMLElement).closest('[data-def-id]') as HTMLElement | null
@@ -31,13 +71,14 @@ sidebarList.addEventListener('click', (e) => {
   startPlacement(li.dataset.defId!)
 })
 
+// --- Keyboard ---
+
 document.addEventListener('keydown', (e) => {
-  if (e.key === 'Escape')                          cancelCurrentDrag()
+  if (e.key === 'Escape')                          { hideContextMenu(); cancelCurrentDrag() }
   if (e.key === 'Delete' || e.key === 'Backspace') deleteSelected()
-  if (e.key === 'l' || e.key === 'L')              toggleComponentsLock()
 })
 
-lockBtn.addEventListener('click', () => toggleComponentsLock())
+// --- Custom component form ---
 
 const form         = document.getElementById('add-component-form') as HTMLFormElement
 const nameInput    = document.getElementById('comp-name')          as HTMLInputElement

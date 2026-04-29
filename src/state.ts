@@ -7,7 +7,6 @@ export const state: AppState = {
   componentLibrary: [...PRESET_LIBRARY],
   selectedId: null,
   selectedType: null,
-  componentsLocked: false,
 }
 
 const listeners: (() => void)[] = []
@@ -26,11 +25,12 @@ export function _resetStateForTest(library: ComponentDef[]): void {
   state.componentLibrary = library
   state.selectedId = null
   state.selectedType = null
-  state.componentsLocked = false
 }
 
-export function toggleComponentsLock(): void {
-  state.componentsLocked = !state.componentsLocked
+export function toggleComponentLock(id: string): void {
+  const comp = state.placedComponents.find(c => c.id === id)
+  if (!comp) return
+  comp.locked = !comp.locked
   notify()
 }
 
@@ -42,6 +42,7 @@ export function placeComponent(defId: string, anchorCol: number, anchorRow = 'E'
     defId,
     anchorCol,
     anchorRow,
+    locked: false,
   }
   state.placedComponents.push(placed)
   notify()
