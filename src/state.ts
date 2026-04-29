@@ -34,6 +34,13 @@ export function toggleComponentLock(id: string): void {
   notify()
 }
 
+export function toggleComponentVisibility(id: string): void {
+  const comp = state.placedComponents.find(c => c.id === id)
+  if (!comp) return
+  comp.hidden = !comp.hidden
+  notify()
+}
+
 export function placeComponent(defId: string, anchorCol: number, anchorRow = 'E'): void {
   const def = state.componentLibrary.find(d => d.id === defId)
   if (!def) return
@@ -43,6 +50,7 @@ export function placeComponent(defId: string, anchorCol: number, anchorRow = 'E'
     anchorCol,
     anchorRow,
     locked: false,
+    hidden: false,
   }
   state.placedComponents.push(placed)
   notify()

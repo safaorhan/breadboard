@@ -145,6 +145,7 @@ function renderBoardLayer(svg: SVGSVGElement, state: AppState): void {
 function getOccupiedHoles(state: AppState): Set<string> {
   const occupied = new Set<string>()
   for (const placed of state.placedComponents) {
+    if (placed.hidden) continue
     const def = state.componentLibrary.find(d => d.id === placed.defId)
     if (!def) continue
     for (const pin of def.pins) {
@@ -173,6 +174,7 @@ function renderWireLayer(svg: SVGSVGElement, state: AppState): void {
 function renderComponentLayer(svg: SVGSVGElement, state: AppState): void {
   const layer = getLayer(svg, 'component-layer')
   for (const placed of state.placedComponents) {
+    if (placed.hidden) continue
     const def = state.componentLibrary.find(d => d.id === placed.defId)
     if (!def) continue
     renderPlacedComponent(layer, placed, def, state.selectedId)

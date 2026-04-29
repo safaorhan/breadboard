@@ -1,13 +1,15 @@
-import { state, onStateChange, addComponentDef, toggleComponentLock } from './state'
+import { state, onStateChange, addComponentDef, toggleComponentLock, toggleComponentVisibility, removeComponent, selectItem } from './state'
 import { initSVG, render, renderSidebar } from './render'
 import { initDrag, startPlacement, cancelCurrentDrag, deleteSelected } from './drag'
 import { analyzeNets } from './nets'
 import { renderTable } from './table'
+import { renderLayersPanel } from './layers'
 import { MARGIN_LEFT, MARGIN_TOP, PITCH, HOLE_RADIUS, ROW_Y_UNITS } from './board'
 
 const canvasContainer = document.getElementById('canvas-container') as HTMLDivElement
 const tableInner      = document.getElementById('table-inner')      as HTMLDivElement
 const sidebarList     = document.getElementById('component-list')   as HTMLUListElement
+const layersList      = document.getElementById('layers-list')      as HTMLUListElement
 const ctxMenu         = document.getElementById('context-menu')     as HTMLDivElement
 const ctxLockItem     = document.getElementById('ctx-toggle-lock')  as HTMLLIElement
 
@@ -18,6 +20,7 @@ function update(): void {
   render(svg, state)
   renderSidebar(sidebarList, state.componentLibrary)
   renderTable(tableInner, analyzeNets(state))
+  renderLayersPanel(layersList, state.placedComponents, state.componentLibrary, state.selectedId)
 }
 
 onStateChange(update)
@@ -83,6 +86,26 @@ function lockedComponentAt(clientX: number, clientY: number): string | null {
 
 document.addEventListener('click', (e) => {
   if (!ctxMenu.contains(e.target as Node)) hideContextMenu()
+})
+
+// --- Layers panel ---
+
+layersList.addEventListener('click', (e) => {
+  const target = e.target as HTMLElement
+  const compId = target.dataset.compId
+  if (!compId) return
+  e.stopPropagation()
+
+  const action = target.dataset.action
+  if (action === 'visibility') {
+    toggleComponentVisibility(compId)
+  } else if (action === 'lock') {
+    toggleComponentLock(compId)
+  } else if (action === 'delete') {
+    removeComponent(compId)
+  } else {
+    selectItem(compId, 'component')
+  }
 })
 
 // --- Sidebar ---

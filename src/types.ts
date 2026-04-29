@@ -18,6 +18,7 @@ export interface PlacedComponent {
   anchorCol: number  // 1-based column of the leftmost pin
   anchorRow: string  // row letter of the top edge (e.g. 'E')
   locked: boolean
+  hidden: boolean
 }
 
 export interface Wire {
