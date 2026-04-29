@@ -10,9 +10,9 @@ import type { ComponentDef } from './types'
 
 type DragMode =
   | { mode: 'idle' }
-  | { mode: 'wiring';   fromHole: string }
-  | { mode: 'placing';  defId: string }
-  | { mode: 'moving';   componentId: string }
+  | { mode: 'wiring';  fromHole: string }
+  | { mode: 'placing'; defId: string }
+  | { mode: 'moving';  componentId: string; startX: number; startY: number; startAnchorCol: number; startAnchorRow: string }
 
 let svg: SVGSVGElement
 let dragMode: DragMode = { mode: 'idle' }
@@ -75,6 +75,19 @@ function snapAnchorRow(svgY: number, def: ComponentDef): string {
   return bestRow
 }
 
+type MovingMode = Extract<DragMode, { mode: 'moving' }>
+
+function deltaToAnchor(svgX: number, svgY: number, dm: MovingMode, def: ComponentDef): { col: number; row: string } {
+  const deltaCol = Math.round((svgX - dm.startX) / PITCH)
+  const rawCol   = dm.startAnchorCol + deltaCol
+  const col      = Math.max(1, Math.min(rawCol, BOARD_COLS - def.colSpan + 1))
+
+  const startAnchorSVGY = MARGIN_TOP + ROW_Y_UNITS[dm.startAnchorRow] * PITCH
+  const row = snapAnchorRow(startAnchorSVGY + (svgY - dm.startY), def)
+
+  return { col, row }
+}
+
 function snapAnchorCol(svgX: number, def: ComponentDef): number {
   const raw = Math.round((svgX - MARGIN_LEFT) / PITCH) + 1
   return Math.max(1, Math.min(raw, BOARD_COLS - def.colSpan + 1))
@@ -95,7 +108,15 @@ function onMouseDown(e: MouseEvent): void {
     const comp = state.placedComponents.find(c => c.id === target.dataset.componentId)
     if (comp) {
       selectItem(comp.id, 'component')
-      dragMode = { mode: 'moving', componentId: comp.id }
+      const { x, y } = getSVGPoint(e)
+      dragMode = {
+        mode: 'moving',
+        componentId: comp.id,
+        startX: x,
+        startY: y,
+        startAnchorCol: comp.anchorCol,
+        startAnchorRow: comp.anchorRow,
+      }
     }
   }
 }
@@ -117,12 +138,13 @@ function onMouseMove(e: MouseEvent): void {
   }
 
   if (dragMode.mode === 'moving') {
-    const dm = dragMode as { mode: 'moving'; componentId: string }
+    const dm = dragMode as Extract<DragMode, { mode: 'moving' }>
     const comp = state.placedComponents.find(c => c.id === dm.componentId)
     if (!comp) return
     const def = state.componentLibrary.find(d => d.id === comp.defId)
     if (!def) return
-    renderGhostComponent(svg, def, snapAnchorCol(x, def), snapAnchorRow(y, def))
+    const { col, row } = deltaToAnchor(x, y, dm, def)
+    renderGhostComponent(svg, def, col, row)
   }
 }
 
@@ -137,12 +159,15 @@ function onMouseUp(e: MouseEvent): void {
   }
 
   if (dragMode.mode === 'moving') {
-    const dm = dragMode as { mode: 'moving'; componentId: string }
+    const dm = dragMode as Extract<DragMode, { mode: 'moving' }>
     const { x, y } = getSVGPoint(e)
     const comp = state.placedComponents.find(c => c.id === dm.componentId)
     if (comp) {
       const def = state.componentLibrary.find(d => d.id === comp.defId)
-      if (def) moveComponent(dm.componentId, snapAnchorCol(x, def), snapAnchorRow(y, def))
+      if (def) {
+        const { col, row } = deltaToAnchor(x, y, dm, def)
+        moveComponent(dm.componentId, col, row)
+      }
     }
     dragMode = { mode: 'idle' }
     clearLayer(svg, 'preview-layer')
