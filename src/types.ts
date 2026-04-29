@@ -1,13 +1,14 @@
 export interface PinDef {
   name: string
-  col: number        // column offset from anchorCol (0-based)
-  row: string  // actual row letter: 'A'–'J'
+  col: number              // column offset from anchorCol (0-based)
+  row: 'top' | 'bottom'   // top edge or bottom edge of the component
 }
 
 export interface ComponentDef {
   id: string
   name: string
-  colSpan: number    // number of columns the component occupies
+  colSpan: number    // width in columns
+  rowSpan: number    // height in y-units (same scale as ROW_Y_UNITS)
   pins: PinDef[]
 }
 
@@ -15,6 +16,7 @@ export interface PlacedComponent {
   id: string
   defId: string
   anchorCol: number  // 1-based column of the leftmost pin
+  anchorRow: string  // row letter of the top edge (e.g. 'E')
 }
 
 export interface Wire {

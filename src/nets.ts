@@ -54,7 +54,7 @@ export function analyzeNets(state: AppState): Net[] {
     const def = state.componentLibrary.find(d => d.id === placed.defId)
     if (!def) continue
     for (const pin of def.pins) {
-      const hole = getComponentPinHole(placed, pin)
+      const hole = getComponentPinHole(placed, pin, def)
       const root = uf.find(hole)
       if (!netMap.has(root)) netMap.set(root, [])
       netMap.get(root)!.push({

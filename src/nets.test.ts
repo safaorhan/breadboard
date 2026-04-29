@@ -7,9 +7,10 @@ const chipA: ComponentDef = {
   id: 'chip-a',
   name: 'ChipA',
   colSpan: 2,
+  rowSpan: 2,
   pins: [
-    { name: 'OUT', col: 0, row: 'E' },
-    { name: 'GND', col: 1, row: 'F' },
+    { name: 'OUT', col: 0, row: 'top' },
+    { name: 'GND', col: 1, row: 'bottom' },
   ],
 }
 
@@ -17,9 +18,10 @@ const chipB: ComponentDef = {
   id: 'chip-b',
   name: 'ChipB',
   colSpan: 2,
+  rowSpan: 2,
   pins: [
-    { name: 'IN',  col: 0, row: 'E' },
-    { name: 'PWR', col: 1, row: 'F' },
+    { name: 'IN',  col: 0, row: 'top' },
+    { name: 'PWR', col: 1, row: 'bottom' },
   ],
 }
 

@@ -27,22 +27,24 @@ export function _resetStateForTest(library: ComponentDef[]): void {
   state.selectedType = null
 }
 
-export function placeComponent(defId: string, anchorCol: number): void {
+export function placeComponent(defId: string, anchorCol: number, anchorRow = 'E'): void {
   const def = state.componentLibrary.find(d => d.id === defId)
   if (!def) return
   const placed: PlacedComponent = {
     id: crypto.randomUUID(),
     defId,
     anchorCol,
+    anchorRow,
   }
   state.placedComponents.push(placed)
   notify()
 }
 
-export function moveComponent(id: string, anchorCol: number): void {
+export function moveComponent(id: string, anchorCol: number, anchorRow: string): void {
   const comp = state.placedComponents.find(c => c.id === id)
   if (!comp) return
   comp.anchorCol = anchorCol
+  comp.anchorRow = anchorRow
   notify()
 }
 
@@ -51,7 +53,7 @@ export function removeComponent(id: string): void {
   if (!comp) return
   const def = state.componentLibrary.find(d => d.id === comp.defId)
   if (def) {
-    const pinHoles = new Set(def.pins.map(p => getComponentPinHole(comp, p)))
+    const pinHoles = new Set(def.pins.map(p => getComponentPinHole(comp, p, def)))
     state.wires = state.wires.filter(w => !pinHoles.has(w.from) && !pinHoles.has(w.to))
   }
   state.placedComponents = state.placedComponents.filter(c => c.id !== id)

@@ -33,42 +33,41 @@ document.addEventListener('keydown', (e) => {
   if (e.key === 'Delete' || e.key === 'Backspace') deleteSelected()
 })
 
-const form            = document.getElementById('add-component-form') as HTMLFormElement
-const nameInput       = document.getElementById('comp-name')          as HTMLInputElement
-const colSpanInput    = document.getElementById('comp-colspan')       as HTMLInputElement
-const topRowSelect    = document.getElementById('comp-top-row')       as HTMLSelectElement
-const bottomRowSelect = document.getElementById('comp-bottom-row')    as HTMLSelectElement
-const pinsInput       = document.getElementById('comp-pins')          as HTMLTextAreaElement
+const form         = document.getElementById('add-component-form') as HTMLFormElement
+const nameInput    = document.getElementById('comp-name')          as HTMLInputElement
+const colSpanInput = document.getElementById('comp-colspan')       as HTMLInputElement
+const rowSpanInput = document.getElementById('comp-rowspan')       as HTMLInputElement
+const pinsInput    = document.getElementById('comp-pins')          as HTMLTextAreaElement
 
 form.addEventListener('submit', (e) => {
   e.preventDefault()
 
-  const name      = nameInput.value.trim()
-  const colSpan   = parseInt(colSpanInput.value, 10)
-  const topRow    = topRowSelect.value
-  const bottomRow = bottomRowSelect.value
-  const pinNames  = pinsInput.value
+  const name     = nameInput.value.trim()
+  const colSpan  = parseInt(colSpanInput.value, 10)
+  const rowSpan  = parseInt(rowSpanInput.value, 10)
+  const pinNames = pinsInput.value
     .split('\n')
     .map(s => s.trim())
     .filter(s => s.length > 0)
 
-  if (!name || isNaN(colSpan) || colSpan < 1) return
+  if (!name || isNaN(colSpan) || colSpan < 1 || isNaN(rowSpan) || rowSpan < 1) return
 
   const topCount    = Math.ceil(pinNames.length / 2)
   const bottomCount = Math.floor(pinNames.length / 2)
 
   const pins = [
     ...pinNames.slice(0, topCount).map((pname, i) => ({
-      name: pname, col: i, row: topRow,
+      name: pname, col: i, row: 'top' as const,
     })),
     ...pinNames.slice(topCount, topCount + bottomCount).map((pname, i) => ({
-      name: pname, col: i, row: bottomRow,
+      name: pname, col: i, row: 'bottom' as const,
     })),
   ]
 
-  addComponentDef({ name, colSpan, pins })
+  addComponentDef({ name, colSpan, rowSpan, pins })
 
   nameInput.value    = ''
   colSpanInput.value = ''
+  rowSpanInput.value = ''
   pinsInput.value    = ''
 })

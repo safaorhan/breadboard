@@ -16,9 +16,10 @@ const mockDef: ComponentDef = {
   id: 'test-def',
   name: 'TestChip',
   colSpan: 2,
+  rowSpan: 2,
   pins: [
-    { name: 'VCC', col: 0, row: 'E' },
-    { name: 'GND', col: 1, row: 'F' },
+    { name: 'VCC', col: 0, row: 'top' },
+    { name: 'GND', col: 1, row: 'bottom' },
   ],
 }
 
@@ -92,7 +93,7 @@ describe('removeWire', () => {
 describe('addComponentDef', () => {
   it('adds to library with generated id', () => {
     const before = state.componentLibrary.length
-    addComponentDef({ name: 'LED', colSpan: 1, pins: [{ name: 'A', col: 0, row: 'top' }] })
+    addComponentDef({ name: 'LED', colSpan: 1, rowSpan: 1, pins: [{ name: 'A', col: 0, row: 'top' }] })
     expect(state.componentLibrary).toHaveLength(before + 1)
     const added = state.componentLibrary[state.componentLibrary.length - 1]
     expect(added.name).toBe('LED')

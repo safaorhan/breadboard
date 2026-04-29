@@ -148,7 +148,7 @@ function getOccupiedHoles(state: AppState): Set<string> {
     const def = state.componentLibrary.find(d => d.id === placed.defId)
     if (!def) continue
     for (const pin of def.pins) {
-      occupied.add(getComponentPinHole(placed, pin))
+      occupied.add(getComponentPinHole(placed, pin, def))
     }
   }
   return occupied
@@ -185,15 +185,14 @@ function renderPlacedComponent(
   def: ComponentDef,
   selectedId: string | null,
 ): void {
-  const yVals = def.pins.map(p => MARGIN_TOP + ROW_Y_UNITS[p.row] * PITCH)
-  const minY  = Math.min(...yVals)
-  const maxY  = Math.max(...yVals)
+  const anchorYUnit = ROW_Y_UNITS[placed.anchorRow]
   const anchorX = MARGIN_LEFT + (placed.anchorCol - 1) * PITCH
+  const anchorY = MARGIN_TOP + anchorYUnit * PITCH
 
   const x = anchorX - HOLE_RADIUS - 1
-  const y = minY - HOLE_RADIUS - 1
+  const y = anchorY - HOLE_RADIUS - 1
   const w = (def.colSpan - 1) * PITCH + HOLE_RADIUS * 2 + 2
-  const h = (maxY - minY) + HOLE_RADIUS * 2 + 2
+  const h = def.rowSpan * PITCH + HOLE_RADIUS * 2 + 2
 
   const g = svgEl('g')
   g.dataset.componentId = placed.id
@@ -216,7 +215,7 @@ function renderPlacedComponent(
   g.appendChild(nameLabel)
 
   for (const pin of def.pins) {
-    const addr       = getComponentPinHole(placed, pin)
+    const addr       = getComponentPinHole(placed, pin, def)
     const { x: px, y: py } = getHolePosition(addr)
 
     const circle = svgEl('circle')
@@ -253,19 +252,18 @@ export function renderSidebar(list: HTMLElement, library: ComponentDef[]): void 
   }
 }
 
-export function renderGhostComponent(svg: SVGSVGElement, def: ComponentDef, anchorCol: number): void {
+export function renderGhostComponent(svg: SVGSVGElement, def: ComponentDef, anchorCol: number, anchorRow: string): void {
   clearLayer(svg, 'preview-layer')
   const layer = getLayer(svg, 'preview-layer')
 
-  const yVals = def.pins.map(p => MARGIN_TOP + ROW_Y_UNITS[p.row] * PITCH)
-  const minY  = Math.min(...yVals)
-  const maxY  = Math.max(...yVals)
+  const anchorYUnit = ROW_Y_UNITS[anchorRow]
   const anchorX = MARGIN_LEFT + (anchorCol - 1) * PITCH
+  const anchorY = MARGIN_TOP + anchorYUnit * PITCH
 
   const x = anchorX - HOLE_RADIUS - 1
-  const y = minY - HOLE_RADIUS - 1
+  const y = anchorY - HOLE_RADIUS - 1
   const w = (def.colSpan - 1) * PITCH + HOLE_RADIUS * 2 + 2
-  const h = (maxY - minY) + HOLE_RADIUS * 2 + 2
+  const h = def.rowSpan * PITCH + HOLE_RADIUS * 2 + 2
 
   const rect = svgEl('rect')
   rect.setAttribute('x', String(x))

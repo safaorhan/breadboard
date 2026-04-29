@@ -86,6 +86,11 @@ export function getInternalGroups(): string[][] {
   return groups
 }
 
+export function rowFromYUnit(yUnit: number): string | undefined {
+  return Object.entries(ROW_Y_UNITS)
+    .find(([key, u]) => u === yUnit && key.length === 1)?.[0]
+}
+
 export function snapToHole(svgX: number, svgY: number): string | null {
   const col = Math.round((svgX - MARGIN_LEFT) / PITCH) + 1
   if (col < 1 || col > BOARD_COLS) return null
