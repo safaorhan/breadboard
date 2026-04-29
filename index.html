@@ -7,45 +7,60 @@
   <link rel="stylesheet" href="/src/style.css" />
 </head>
 <body>
+  <header id="topbar">
+    <span id="app-name">Breadboard</span>
+    <span id="topbar-hint">Right-click component to lock · Delete to remove · Drag from hole to wire</span>
+  </header>
+
   <div id="app">
+
+    <!-- Left: component library -->
     <aside id="sidebar">
-      <h2>Components</h2>
-      <ul id="component-list"></ul>
-      <hr />
-      <h3>Custom Component</h3>
-      <form id="add-component-form">
-        <label>
-          Name
-          <input id="comp-name" type="text" placeholder="e.g. SSD1306" required />
-        </label>
-        <label>
-          Column span
-          <input id="comp-colspan" type="number" min="1" max="40" placeholder="e.g. 4" required />
-        </label>
-        <label>
-          Height (pitch)
-          <input id="comp-rowspan" type="number" min="1" max="16" placeholder="e.g. 2" required />
-        </label>
-        <label>
-          Pins (one per line, top row left→right then bottom row left→right)
-          <textarea id="comp-pins" rows="6" placeholder="VCC&#10;GND&#10;SDA&#10;SCL"></textarea>
-        </label>
-        <button type="submit">Add to Library</button>
-      </form>
+      <div class="panel-section">
+        <div class="panel-label">Library</div>
+        <ul id="component-list"></ul>
+      </div>
+      <div class="panel-section">
+        <div class="panel-label">Add component</div>
+        <div id="add-form-body">
+          <form id="add-component-form">
+            <label>
+              Name
+              <input id="comp-name" type="text" placeholder="e.g. SSD1306" required />
+            </label>
+            <label>
+              Width (columns)
+              <input id="comp-colspan" type="number" min="1" max="40" placeholder="e.g. 10" required />
+            </label>
+            <label>
+              Height (pitch)
+              <input id="comp-rowspan" type="number" min="1" max="16" placeholder="e.g. 9" required />
+            </label>
+            <label>
+              Pins — top row left→right, then bottom row
+              <textarea id="comp-pins" rows="5" placeholder="VCC&#10;GND&#10;SDA&#10;SCL"></textarea>
+            </label>
+            <button type="submit">Add to library</button>
+          </form>
+        </div>
+      </div>
     </aside>
 
+    <!-- Centre: canvas + connection table -->
     <main id="main">
       <div id="canvas-container"></div>
       <div id="table-container">
-        <h3>Connections</h3>
+        <div class="panel-label">Connections</div>
         <div id="table-inner"></div>
       </div>
     </main>
 
+    <!-- Right: placed components (layers) -->
     <aside id="layers-panel">
-      <h2>Board</h2>
+      <div class="panel-label" style="padding-top:12px">Board</div>
       <ul id="layers-list"></ul>
     </aside>
+
   </div>
 
   <div id="context-menu">
