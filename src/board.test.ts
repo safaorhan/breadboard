@@ -8,7 +8,6 @@ import {
   MARGIN_LEFT,
   MARGIN_TOP,
   ROW_Y_UNITS,
-  BOARD_COLS,
 } from './board'
 
 describe('holeExists', () => {
