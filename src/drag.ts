@@ -46,11 +46,10 @@ export function deleteSelected(): void {
 
 function getSVGPoint(e: MouseEvent): { x: number; y: number } {
   const rect = svg.getBoundingClientRect()
-  const scaleX = parseFloat(svg.getAttribute('width')  ?? '1') / rect.width
-  const scaleY = parseFloat(svg.getAttribute('height') ?? '1') / rect.height
+  const vb   = svg.viewBox.baseVal
   return {
-    x: (e.clientX - rect.left) * scaleX,
-    y: (e.clientY - rect.top)  * scaleY,
+    x: (e.clientX - rect.left) * (vb.width  / rect.width),
+    y: (e.clientY - rect.top)  * (vb.height / rect.height),
   }
 }
 

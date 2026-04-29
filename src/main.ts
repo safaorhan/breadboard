@@ -106,9 +106,8 @@ svg.addEventListener('contextmenu', (e) => {
 
 function clientToSVG(clientX: number, clientY: number): { x: number; y: number } {
   const rect = svg.getBoundingClientRect()
-  const scaleX = parseFloat(svg.getAttribute('width')  ?? '1') / rect.width
-  const scaleY = parseFloat(svg.getAttribute('height') ?? '1') / rect.height
-  return { x: (clientX - rect.left) * scaleX, y: (clientY - rect.top) * scaleY }
+  const vb   = svg.viewBox.baseVal
+  return { x: (clientX - rect.left) * (vb.width / rect.width), y: (clientY - rect.top) * (vb.height / rect.height) }
 }
 
 function lockedComponentAt(clientX: number, clientY: number): string | null {
