@@ -16,7 +16,7 @@ const mockDef: ComponentDef = {
   id: 'test-def',
   name: 'TestChip',
   colSpan: 2,
-  rowSpan: 2,
+  rowSpan: 3,
   pins: [
     { name: 'VCC', col: 0, row: 'top' },
     { name: 'GND', col: 1, row: 'bottom' },

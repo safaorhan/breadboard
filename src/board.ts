@@ -18,22 +18,25 @@ export type RailName = typeof RAIL_NAMES[number]
 export const ROW_Y_UNITS: Record<string, number> = {
   'top+':    0,
   'top-':    1,
+  // gap at unit 2
   'A':       3,
   'B':       4,
   'C':       5,
   'D':       6,
   'E':       7,
-  'F':       9,
-  'G':      10,
-  'H':      11,
-  'I':      12,
-  'J':      13,
-  'bottom+': 15,
-  'bottom-': 16,
+  // center channel: 2-unit gap at units 8–9
+  'F':      10,
+  'G':      11,
+  'H':      12,
+  'I':      13,
+  'J':      14,
+  // gap at unit 15
+  'bottom+': 16,
+  'bottom-': 17,
 }
 
 export const SVG_WIDTH  = MARGIN_LEFT + BOARD_COLS * PITCH + MARGIN_RIGHT
-export const SVG_HEIGHT = MARGIN_TOP  + 17 * PITCH + MARGIN_BOTTOM
+export const SVG_HEIGHT = MARGIN_TOP  + 18 * PITCH + MARGIN_BOTTOM
 
 export function holeExists(address: string): boolean {
   if (address.includes(':')) {
