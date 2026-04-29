@@ -58,6 +58,37 @@ zoomInBtn.addEventListener('click',  () => setZoom(zoomLevel * 1.25))
 zoomOutBtn.addEventListener('click', () => setZoom(zoomLevel / 1.25))
 zoomLabel.addEventListener('click',  () => setZoom(1))
 
+// ── Sidebar resize ──────────────────────────────────────────────────────
+const sidebarEl     = document.getElementById('sidebar')               as HTMLElement
+const resizeHandle  = document.getElementById('sidebar-resize-handle') as HTMLDivElement
+
+let resizing = false
+let resizeStartX = 0
+let resizeStartWidth = 0
+
+resizeHandle.addEventListener('mousedown', (e) => {
+  resizing = true
+  resizeStartX = e.clientX
+  resizeStartWidth = sidebarEl.offsetWidth
+  resizeHandle.classList.add('dragging')
+  document.body.style.cursor    = 'ew-resize'
+  document.body.style.userSelect = 'none'
+})
+
+document.addEventListener('mousemove', (e) => {
+  if (!resizing) return
+  const w = Math.max(160, Math.min(480, resizeStartWidth + (e.clientX - resizeStartX)))
+  sidebarEl.style.width = `${w}px`
+})
+
+document.addEventListener('mouseup', () => {
+  if (!resizing) return
+  resizing = false
+  resizeHandle.classList.remove('dragging')
+  document.body.style.cursor     = ''
+  document.body.style.userSelect = ''
+})
+
 let editingDefId: string | null = null
 
 function update(): void {
