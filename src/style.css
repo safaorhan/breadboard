@@ -137,6 +137,7 @@ body {
 
 .component-body {
   fill: #2d4a2d;
+  fill-opacity: 0.35;
   stroke: #4a7a4a;
   stroke-width: 1;
   cursor: move;
