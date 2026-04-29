@@ -190,7 +190,7 @@ function renderPlacedComponent(
 
   const x = topPos.x - HOLE_RADIUS - 1
   const y = topPos.y - HOLE_RADIUS - 1
-  const w = def.colSpan * PITCH + HOLE_RADIUS * 2 + 2
+  const w = (def.colSpan - 1) * PITCH + HOLE_RADIUS * 2 + 2
   const h = (bottomPos.y - topPos.y) + HOLE_RADIUS * 2 + 2
 
   const g = svgEl('g')
@@ -260,7 +260,7 @@ export function renderGhostComponent(svg: SVGSVGElement, def: ComponentDef, anch
 
   const x = topPos.x - HOLE_RADIUS - 1
   const y = topPos.y - HOLE_RADIUS - 1
-  const w = def.colSpan * PITCH + HOLE_RADIUS * 2 + 2
+  const w = (def.colSpan - 1) * PITCH + HOLE_RADIUS * 2 + 2
   const h = (bottomPos.y - topPos.y) + HOLE_RADIUS * 2 + 2
 
   const rect = svgEl('rect')
