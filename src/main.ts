@@ -4,17 +4,59 @@ import { initDrag, startPlacement, cancelCurrentDrag, deleteSelected } from './d
 import { analyzeNets } from './nets'
 import { renderTable } from './table'
 import { renderLayersPanel } from './layers'
-import { MARGIN_LEFT, MARGIN_TOP, PITCH, HOLE_RADIUS, ROW_Y_UNITS } from './board'
+import { MARGIN_LEFT, MARGIN_TOP, PITCH, HOLE_RADIUS, ROW_Y_UNITS, SVG_WIDTH, SVG_HEIGHT } from './board'
 
-const canvasContainer = document.getElementById('canvas-container') as HTMLDivElement
-const tableInner      = document.getElementById('table-inner')      as HTMLDivElement
-const sidebarList     = document.getElementById('component-list')   as HTMLUListElement
-const layersList      = document.getElementById('layers-list')      as HTMLUListElement
-const ctxMenu         = document.getElementById('context-menu')     as HTMLDivElement
-const ctxLockItem     = document.getElementById('ctx-toggle-lock')  as HTMLLIElement
+const canvasContainer = document.getElementById('canvas-container')  as HTMLDivElement
+const canvasScrollArea= document.getElementById('canvas-scroll-area') as HTMLDivElement
+const tableInner      = document.getElementById('table-inner')       as HTMLDivElement
+const sidebarList     = document.getElementById('component-list')    as HTMLUListElement
+const layersList      = document.getElementById('layers-list')       as HTMLUListElement
+const ctxMenu         = document.getElementById('context-menu')      as HTMLDivElement
+const ctxLockItem     = document.getElementById('ctx-toggle-lock')   as HTMLLIElement
+const zoomInBtn       = document.getElementById('zoom-in')           as HTMLButtonElement
+const zoomOutBtn      = document.getElementById('zoom-out')          as HTMLButtonElement
+const zoomLabel       = document.getElementById('zoom-label')        as HTMLSpanElement
 
 const svg = initSVG(canvasContainer)
 initDrag(svg)
+
+// ── Zoom ────────────────────────────────────────────────────────────────
+let zoomLevel = 1
+
+function applyZoom(): void {
+  svg.setAttribute('width',  String(Math.round(SVG_WIDTH  * zoomLevel)))
+  svg.setAttribute('height', String(Math.round(SVG_HEIGHT * zoomLevel)))
+  zoomLabel.textContent = `${Math.round(zoomLevel * 100)}%`
+}
+
+function setZoom(level: number, pivotClientX?: number, pivotClientY?: number): void {
+  const clamped = Math.max(0.25, Math.min(4, level))
+  if (clamped === zoomLevel) return
+
+  if (pivotClientX !== undefined && pivotClientY !== undefined) {
+    const rect    = canvasScrollArea.getBoundingClientRect()
+    const beforeX = (pivotClientX - rect.left + canvasScrollArea.scrollLeft) / zoomLevel
+    const beforeY = (pivotClientY - rect.top  + canvasScrollArea.scrollTop)  / zoomLevel
+    zoomLevel = clamped
+    applyZoom()
+    canvasScrollArea.scrollLeft = beforeX * zoomLevel - (pivotClientX - rect.left)
+    canvasScrollArea.scrollTop  = beforeY * zoomLevel - (pivotClientY - rect.top)
+  } else {
+    zoomLevel = clamped
+    applyZoom()
+  }
+}
+
+canvasScrollArea.addEventListener('wheel', (e) => {
+  if (e.ctrlKey || e.metaKey) {
+    e.preventDefault()
+    setZoom(zoomLevel * (e.deltaY < 0 ? 1.1 : 1 / 1.1), e.clientX, e.clientY)
+  }
+}, { passive: false })
+
+zoomInBtn.addEventListener('click',  () => setZoom(zoomLevel * 1.25))
+zoomOutBtn.addEventListener('click', () => setZoom(zoomLevel / 1.25))
+zoomLabel.addEventListener('click',  () => setZoom(1))
 
 function update(): void {
   render(svg, state)
@@ -123,6 +165,9 @@ sidebarList.addEventListener('click', (e) => {
 document.addEventListener('keydown', (e) => {
   if (e.key === 'Escape')                          { hideContextMenu(); cancelCurrentDrag() }
   if (e.key === 'Delete' || e.key === 'Backspace') deleteSelected()
+  if ((e.ctrlKey || e.metaKey) && e.key === '=')  { e.preventDefault(); setZoom(zoomLevel * 1.25) }
+  if ((e.ctrlKey || e.metaKey) && e.key === '-')  { e.preventDefault(); setZoom(zoomLevel / 1.25) }
+  if ((e.ctrlKey || e.metaKey) && e.key === '0')  { e.preventDefault(); setZoom(1) }
 })
 
 // --- Custom component form ---

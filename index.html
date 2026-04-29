@@ -7,14 +7,35 @@
   <link rel="stylesheet" href="/src/style.css" />
 </head>
 <body>
+
+  <!-- ── Top bar ──────────────────────────────────────────────────────── -->
   <header id="topbar">
-    <span id="app-name">Breadboard</span>
-    <span id="topbar-hint">Right-click component to lock · Delete to remove · Drag from hole to wire</span>
+    <div id="app-logo">
+      <svg width="18" height="18" viewBox="0 0 18 18" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <rect x="1" y="5" width="16" height="8" rx="1.5" fill="#e8f5ed" stroke="#2d8a50" stroke-width="1.2"/>
+        <circle cx="4"  cy="9" r="1.4" fill="#8a8478"/>
+        <circle cx="7"  cy="9" r="1.4" fill="#8a8478"/>
+        <circle cx="10" cy="9" r="1.4" fill="#8a8478"/>
+        <circle cx="13" cy="9" r="1.4" fill="#8a8478"/>
+        <line x1="1" y1="9" x2="4" y2="9" stroke="#0d99ff" stroke-width="1.2" stroke-linecap="round"/>
+        <line x1="4" y1="9" x2="7" y2="9" stroke="#0d99ff" stroke-width="1.2" stroke-linecap="round"/>
+      </svg>
+      <span id="app-name">Breadboard</span>
+    </div>
+
+    <div id="topbar-center"></div>
+
+    <div id="topbar-right">
+      <button class="zoom-btn" id="zoom-out" title="Zoom out (−)">−</button>
+      <span id="zoom-label" title="Reset zoom">100%</span>
+      <button class="zoom-btn" id="zoom-in"  title="Zoom in (+)">+</button>
+    </div>
   </header>
 
+  <!-- ── App shell ────────────────────────────────────────────────────── -->
   <div id="app">
 
-    <!-- Left: component library -->
+    <!-- Left: library + add component form -->
     <aside id="sidebar">
       <div class="panel-section">
         <div class="panel-label">Library</div>
@@ -24,20 +45,16 @@
         <div class="panel-label">Add component</div>
         <div id="add-form-body">
           <form id="add-component-form">
-            <label>
-              Name
+            <label>Name
               <input id="comp-name" type="text" placeholder="e.g. SSD1306" required />
             </label>
-            <label>
-              Width (columns)
+            <label>Width (columns)
               <input id="comp-colspan" type="number" min="1" max="40" placeholder="e.g. 10" required />
             </label>
-            <label>
-              Height (pitch)
+            <label>Height (pitch)
               <input id="comp-rowspan" type="number" min="1" max="16" placeholder="e.g. 9" required />
             </label>
-            <label>
-              Pins — top row left→right, then bottom row
+            <label>Pins — top row left→right, then bottom row
               <textarea id="comp-pins" rows="5" placeholder="VCC&#10;GND&#10;SDA&#10;SCL"></textarea>
             </label>
             <button type="submit">Add to library</button>
@@ -48,14 +65,16 @@
 
     <!-- Centre: canvas + connection table -->
     <main id="main">
-      <div id="canvas-container"></div>
+      <div id="canvas-scroll-area">
+        <div id="canvas-container"></div>
+      </div>
       <div id="table-container">
         <div class="panel-label">Connections</div>
         <div id="table-inner"></div>
       </div>
     </main>
 
-    <!-- Right: placed components (layers) -->
+    <!-- Right: placed components (layers panel) -->
     <aside id="layers-panel">
       <div class="panel-label" style="padding-top:12px">Board</div>
       <ul id="layers-list"></ul>
@@ -63,10 +82,9 @@
 
   </div>
 
+  <!-- Context menu -->
   <div id="context-menu">
-    <ul>
-      <li id="ctx-toggle-lock"></li>
-    </ul>
+    <ul><li id="ctx-toggle-lock"></li></ul>
   </div>
 
   <script type="module" src="/src/main.ts"></script>
