@@ -246,12 +246,33 @@ function renderPlacedComponent(
   layer.appendChild(g)
 }
 
-export function renderSidebar(list: HTMLElement, library: ComponentDef[]): void {
+const PENCIL_ICON = `<svg width="12" height="12" viewBox="0 0 24 24" fill="none"
+    stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+    style="pointer-events:none">
+  <path d="M12 20h9"/>
+  <path d="M16.5 3.5a2.121 2.121 0 013 3L7 19l-4 1 1-4L16.5 3.5z"/>
+</svg>`
+
+export function renderSidebar(list: HTMLElement, library: ComponentDef[], editingId: string | null = null): void {
   list.innerHTML = ''
   for (const def of library) {
     const li = document.createElement('li')
-    li.textContent = def.name
     li.dataset.defId = def.id
+    if (def.id === editingId) li.classList.add('editing')
+
+    const nameSpan = document.createElement('span')
+    nameSpan.className   = 'comp-item-name'
+    nameSpan.textContent = def.name
+
+    const editBtn = document.createElement('button')
+    editBtn.className      = 'comp-edit-btn'
+    editBtn.title          = 'Edit component'
+    editBtn.innerHTML      = PENCIL_ICON
+    editBtn.dataset.action = 'edit'
+    editBtn.dataset.defId  = def.id
+
+    li.appendChild(nameSpan)
+    li.appendChild(editBtn)
     list.appendChild(li)
   }
 }

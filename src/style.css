@@ -150,19 +150,60 @@ body {
   overflow-y: auto;
 }
 #component-list li {
-  padding: 5px 8px;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 6px;
   border-radius: var(--r);
   cursor: pointer;
   color: var(--text-2);
-  font-size: 12px;
   user-select: none;
-  white-space: nowrap;
   overflow: hidden;
-  text-overflow: ellipsis;
   transition: background 0.08s;
 }
 #component-list li:hover  { background: var(--bg-hover); color: var(--text-1); }
-#component-list li.active { background: var(--accent-bg); color: var(--accent); font-weight: 500; }
+#component-list li.active  { background: var(--accent-bg); color: var(--accent); font-weight: 500; }
+#component-list li.editing { background: #fff8e6; color: var(--amber); }
+
+.comp-item-name {
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 12px;
+}
+
+.comp-edit-btn {
+  background: none;
+  border: none;
+  color: var(--text-3);
+  cursor: pointer;
+  width: 20px;
+  height: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 3px;
+  flex-shrink: 0;
+  opacity: 0;
+  transition: opacity 0.1s, background 0.08s, color 0.08s;
+}
+#component-list li:hover .comp-edit-btn  { opacity: 1; }
+#component-list li.editing .comp-edit-btn { opacity: 1; color: var(--amber); }
+.comp-edit-btn:hover { background: var(--bg-hover); color: var(--text-1); }
+
+#add-component-form button[type="button"] {
+  background: none;
+  color: var(--text-3);
+  border: 1px solid var(--border);
+  border-radius: var(--r);
+  padding: 6px 10px;
+  cursor: pointer;
+  font-size: 12px;
+  font-family: inherit;
+  transition: background 0.1s, color 0.1s;
+}
+#add-component-form button[type="button"]:hover { background: var(--bg-hover); color: var(--text-1); }
 
 #add-form-body {
   padding: 8px 12px 12px;

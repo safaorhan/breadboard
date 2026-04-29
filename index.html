@@ -42,7 +42,7 @@
         <ul id="component-list"></ul>
       </div>
       <div class="panel-section">
-        <div class="panel-label">Add component</div>
+        <div class="panel-label" id="form-panel-label">Add component</div>
         <div id="add-form-body">
           <form id="add-component-form">
             <label>Name
@@ -57,7 +57,8 @@
             <label>Pins — top row left→right, then bottom row
               <textarea id="comp-pins" rows="5" placeholder="VCC&#10;GND&#10;SDA&#10;SCL"></textarea>
             </label>
-            <button type="submit">Add to library</button>
+            <button type="submit" id="form-submit-btn">Add to library</button>
+            <button type="button" id="form-cancel-btn" style="display:none">Cancel</button>
           </form>
         </div>
       </div>

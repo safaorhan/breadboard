@@ -1,4 +1,4 @@
-import { state, onStateChange, addComponentDef, toggleComponentLock, toggleComponentVisibility, removeComponent, selectItem } from './state'
+import { state, onStateChange, addComponentDef, updateComponentDef, toggleComponentLock, toggleComponentVisibility, removeComponent, selectItem } from './state'
 import { initSVG, render, renderSidebar } from './render'
 import { initDrag, startPlacement, cancelCurrentDrag, deleteSelected } from './drag'
 import { analyzeNets } from './nets'
@@ -60,7 +60,7 @@ zoomLabel.addEventListener('click',  () => setZoom(1))
 
 function update(): void {
   render(svg, state)
-  renderSidebar(sidebarList, state.componentLibrary)
+  renderSidebar(sidebarList, state.componentLibrary, editingDefId)
   renderTable(tableInner, analyzeNets(state))
   renderLayersPanel(layersList, state.placedComponents, state.componentLibrary, state.selectedId)
 }
@@ -147,14 +147,65 @@ layersList.addEventListener('click', (e) => {
   else                          selectItem(compId, 'component')
 })
 
-// --- Sidebar ---
+// --- Sidebar + edit mode ---
+
+let editingDefId: string | null = null
+
+const formPanelLabel = document.getElementById('form-panel-label') as HTMLDivElement
+const submitBtn      = document.getElementById('form-submit-btn')  as HTMLButtonElement
+const cancelBtn      = document.getElementById('form-cancel-btn')  as HTMLButtonElement
+
+function enterEditMode(defId: string): void {
+  const def = state.componentLibrary.find(d => d.id === defId)
+  if (!def) return
+  editingDefId = defId
+
+  nameInput.value    = def.name
+  colSpanInput.value = String(def.colSpan)
+  rowSpanInput.value = String(def.rowSpan)
+
+  const topPins    = def.pins.filter(p => p.row === 'top').sort((a, b) => a.col - b.col).map(p => p.name)
+  const bottomPins = def.pins.filter(p => p.row === 'bottom').sort((a, b) => a.col - b.col).map(p => p.name)
+  pinsInput.value   = [...topPins, ...bottomPins].join('\n')
+
+  formPanelLabel.textContent = `Edit — ${def.name}`
+  submitBtn.textContent      = 'Save changes'
+  cancelBtn.style.display    = 'block'
+
+  document.getElementById('add-form-body')!.scrollIntoView({ behavior: 'smooth', block: 'start' })
+  nameInput.focus()
+  update()
+}
+
+function exitEditMode(): void {
+  editingDefId = null
+  nameInput.value    = ''
+  colSpanInput.value = ''
+  rowSpanInput.value = ''
+  pinsInput.value    = ''
+  formPanelLabel.textContent = 'Add component'
+  submitBtn.textContent      = 'Add to library'
+  cancelBtn.style.display    = 'none'
+  update()
+}
+
+cancelBtn.addEventListener('click', exitEditMode)
 
 sidebarList.addEventListener('click', (e) => {
-  const li = (e.target as HTMLElement).closest('[data-def-id]') as HTMLElement | null
+  const target  = e.target as HTMLElement
+  const editBtn = target.closest('[data-action="edit"]') as HTMLElement | null
+  const li      = target.closest('[data-def-id]')        as HTMLElement | null
   if (!li) return
+  const defId = li.dataset.defId!
+
+  if (editBtn) {
+    enterEditMode(defId)
+    return
+  }
+
   document.querySelectorAll('#component-list li').forEach(el => el.classList.remove('active'))
   li.classList.add('active')
-  startPlacement(li.dataset.defId!)
+  startPlacement(defId)
 })
 
 // --- Keyboard ---
@@ -167,7 +218,7 @@ document.addEventListener('keydown', (e) => {
   if ((e.ctrlKey || e.metaKey) && e.key === '0')  { e.preventDefault(); setZoom(1) }
 })
 
-// --- Custom component form ---
+// --- Component form (add + edit) ---
 
 const form         = document.getElementById('add-component-form') as HTMLFormElement
 const nameInput    = document.getElementById('comp-name')          as HTMLInputElement
@@ -192,18 +243,18 @@ form.addEventListener('submit', (e) => {
   const bottomCount = Math.floor(pinNames.length / 2)
 
   const pins = [
-    ...pinNames.slice(0, topCount).map((pname, i) => ({
-      name: pname, col: i, row: 'top' as const,
-    })),
-    ...pinNames.slice(topCount, topCount + bottomCount).map((pname, i) => ({
-      name: pname, col: i, row: 'bottom' as const,
-    })),
+    ...pinNames.slice(0, topCount).map((pname, i) => ({ name: pname, col: i, row: 'top'    as const })),
+    ...pinNames.slice(topCount, topCount + bottomCount).map((pname, i) => ({ name: pname, col: i, row: 'bottom' as const })),
   ]
 
-  addComponentDef({ name, colSpan, rowSpan, pins })
-
-  nameInput.value    = ''
-  colSpanInput.value = ''
-  rowSpanInput.value = ''
-  pinsInput.value    = ''
+  if (editingDefId) {
+    updateComponentDef(editingDefId, { name, colSpan, rowSpan, pins })
+    exitEditMode()
+  } else {
+    addComponentDef({ name, colSpan, rowSpan, pins })
+    nameInput.value    = ''
+    colSpanInput.value = ''
+    rowSpanInput.value = ''
+    pinsInput.value    = ''
+  }
 })

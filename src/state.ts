@@ -92,6 +92,13 @@ export function addComponentDef(def: Omit<ComponentDef, 'id'>): void {
   notify()
 }
 
+export function updateComponentDef(id: string, updates: Omit<ComponentDef, 'id'>): void {
+  const idx = state.componentLibrary.findIndex(d => d.id === id)
+  if (idx === -1) return
+  state.componentLibrary[idx] = { ...updates, id }
+  notify()
+}
+
 export function selectItem(id: string | null, type: 'component' | 'wire' | null): void {
   state.selectedId = id
   state.selectedType = type
