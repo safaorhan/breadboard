@@ -1,4 +1,4 @@
-import { state, onStateChange, addComponentDef } from './state'
+import { state, onStateChange, addComponentDef, toggleComponentsLock } from './state'
 import { initSVG, render, renderSidebar } from './render'
 import { initDrag, startPlacement, cancelCurrentDrag, deleteSelected } from './drag'
 import { analyzeNets } from './nets'
@@ -7,6 +7,7 @@ import { renderTable } from './table'
 const canvasContainer = document.getElementById('canvas-container') as HTMLDivElement
 const tableInner      = document.getElementById('table-inner')      as HTMLDivElement
 const sidebarList     = document.getElementById('component-list')   as HTMLUListElement
+const lockBtn         = document.getElementById('lock-btn')         as HTMLButtonElement
 
 const svg = initSVG(canvasContainer)
 initDrag(svg)
@@ -15,6 +16,8 @@ function update(): void {
   render(svg, state)
   renderSidebar(sidebarList, state.componentLibrary)
   renderTable(tableInner, analyzeNets(state))
+  lockBtn.textContent = state.componentsLocked ? 'Unlock components' : 'Lock components'
+  lockBtn.classList.toggle('locked', state.componentsLocked)
 }
 
 onStateChange(update)
@@ -31,7 +34,10 @@ sidebarList.addEventListener('click', (e) => {
 document.addEventListener('keydown', (e) => {
   if (e.key === 'Escape')                          cancelCurrentDrag()
   if (e.key === 'Delete' || e.key === 'Backspace') deleteSelected()
+  if (e.key === 'l' || e.key === 'L')              toggleComponentsLock()
 })
+
+lockBtn.addEventListener('click', () => toggleComponentsLock())
 
 const form         = document.getElementById('add-component-form') as HTMLFormElement
 const nameInput    = document.getElementById('comp-name')          as HTMLInputElement

@@ -175,7 +175,7 @@ function renderComponentLayer(svg: SVGSVGElement, state: AppState): void {
   for (const placed of state.placedComponents) {
     const def = state.componentLibrary.find(d => d.id === placed.defId)
     if (!def) continue
-    renderPlacedComponent(layer, placed, def, state.selectedId)
+    renderPlacedComponent(layer, placed, def, state.selectedId, state.componentsLocked)
   }
 }
 
@@ -184,6 +184,7 @@ function renderPlacedComponent(
   placed: PlacedComponent,
   def: ComponentDef,
   selectedId: string | null,
+  locked: boolean,
 ): void {
   const anchorYUnit = ROW_Y_UNITS[placed.anchorRow]
   const anchorX = MARGIN_LEFT + (placed.anchorCol - 1) * PITCH
@@ -203,6 +204,7 @@ function renderPlacedComponent(
   body.setAttribute('width', String(w))
   body.setAttribute('height', String(h))
   body.setAttribute('class', placed.id === selectedId ? 'component-body selected' : 'component-body')
+  body.setAttribute('pointer-events', locked ? 'none' : 'auto')
   body.dataset.componentId = placed.id
   g.appendChild(body)
 

@@ -7,6 +7,7 @@ export const state: AppState = {
   componentLibrary: [...PRESET_LIBRARY],
   selectedId: null,
   selectedType: null,
+  componentsLocked: false,
 }
 
 const listeners: (() => void)[] = []
@@ -25,6 +26,12 @@ export function _resetStateForTest(library: ComponentDef[]): void {
   state.componentLibrary = library
   state.selectedId = null
   state.selectedType = null
+  state.componentsLocked = false
+}
+
+export function toggleComponentsLock(): void {
+  state.componentsLocked = !state.componentsLocked
+  notify()
 }
 
 export function placeComponent(defId: string, anchorCol: number, anchorRow = 'E'): void {

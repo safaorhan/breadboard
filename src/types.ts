@@ -31,4 +31,5 @@ export interface AppState {
   componentLibrary: ComponentDef[]
   selectedId: string | null
   selectedType: 'component' | 'wire' | null
+  componentsLocked: boolean
 }

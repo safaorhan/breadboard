@@ -48,6 +48,24 @@ body {
 #component-list li:hover { background: #444; }
 #component-list li.active { background: #2a5a8a; }
 
+#lock-btn {
+  background: #333;
+  color: #aaa;
+  border: 1px solid #555;
+  border-radius: 4px;
+  padding: 5px 8px;
+  cursor: pointer;
+  font-size: 11px;
+  text-align: left;
+  width: 100%;
+}
+#lock-btn:hover { background: #444; }
+#lock-btn.locked {
+  background: #3a2a0a;
+  border-color: #aa7722;
+  color: #ffcc66;
+}
+
 #add-component-form {
   display: flex;
   flex-direction: column;

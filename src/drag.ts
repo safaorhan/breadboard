@@ -103,7 +103,7 @@ function onMouseDown(e: MouseEvent): void {
     return
   }
 
-  if (target.dataset.componentId && dragMode.mode === 'idle') {
+  if (target.dataset.componentId && dragMode.mode === 'idle' && !state.componentsLocked) {
     e.stopPropagation()
     const comp = state.placedComponents.find(c => c.id === target.dataset.componentId)
     if (comp) {
