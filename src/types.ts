@@ -19,6 +19,9 @@ export interface PlacedComponent {
   anchorRow: string  // row letter of the top edge (e.g. 'E')
   locked: boolean
   hidden: boolean
+  rotated: boolean
+  colorIdx: number
+  instanceNum: number
 }
 
 export interface Wire {

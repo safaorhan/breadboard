@@ -3,9 +3,11 @@ import { ROW_Y_UNITS, rowFromYUnit } from './board'
 
 export function getComponentPinHole(placed: PlacedComponent, pin: PinDef, def: ComponentDef): string {
   const anchorYUnit = ROW_Y_UNITS[placed.anchorRow]
-  const targetYUnit = pin.row === 'top' ? anchorYUnit : anchorYUnit + def.rowSpan
+  const col     = placed.rotated ? (def.colSpan - 1 - pin.col)          : pin.col
+  const rowSide = placed.rotated ? (pin.row === 'top' ? 'bottom' : 'top') : pin.row
+  const targetYUnit = rowSide === 'top' ? anchorYUnit : anchorYUnit + def.rowSpan
   const row = rowFromYUnit(targetYUnit) ?? ''
-  return `${row}${placed.anchorCol + pin.col}`
+  return `${row}${placed.anchorCol + col}`
 }
 
 // colSpan=10, rowSpan=9: spans columns 1-10, rows A-H / B-I / C-J

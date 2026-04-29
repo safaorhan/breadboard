@@ -95,7 +95,7 @@ function onMouseDown(e: MouseEvent): void {
   if (e.button !== 0) return
   const target = e.target as SVGElement
 
-  if (target.dataset.hole) {
+  if (target.dataset.hole && dragMode.mode !== 'placing') {
     e.stopPropagation()
     dragMode = { mode: 'wiring', fromHole: target.dataset.hole }
     return

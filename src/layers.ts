@@ -1,4 +1,6 @@
-import type { PlacedComponent, ComponentDef } from './types'
+import type { PlacedComponent, ComponentDef, AppState } from './types'
+import { getColor } from './colors'
+import { getComponentPinHole } from './components'
 
 // Lucide-style icons (24×24 viewBox, stroke-based)
 const ICON = {
@@ -31,6 +33,15 @@ const ICON = {
     <path d="M7 11V7a5 5 0 019.9-1"/>
   </svg>`,
 
+  rotate: `<svg width="14" height="14" viewBox="0 0 24 24" fill="none"
+      stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+      style="pointer-events:none">
+    <path d="M21 2v6h-6"/>
+    <path d="M3 12a9 9 0 0115-6.7L21 8"/>
+    <path d="M3 22v-6h6"/>
+    <path d="M21 12a9 9 0 01-15 6.7L3 16"/>
+  </svg>`,
+
   trash: `<svg width="14" height="14" viewBox="0 0 24 24" fill="none"
       stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
       style="pointer-events:none">
@@ -49,6 +60,9 @@ export function renderLayersPanel(
   selectedId: string | null,
 ): void {
   list.innerHTML = ''
+
+  const defCounts = new Map<string, number>()
+  for (const p of placedComponents) defCounts.set(p.defId, (defCounts.get(p.defId) ?? 0) + 1)
 
   if (placedComponents.length === 0) {
     const empty = document.createElement('li')
@@ -70,18 +84,90 @@ export function renderLayersPanel(
     ].filter(Boolean).join(' ')
     li.dataset.compId = placed.id
 
+    const colorDot = document.createElement('button')
+    colorDot.className        = 'layer-color-btn'
+    colorDot.title            = 'Change color'
+    colorDot.dataset.action   = 'color'
+    colorDot.dataset.compId   = placed.id
+    colorDot.style.background = getColor(placed.colorIdx).stroke
+
     const name = document.createElement('span')
     name.className   = 'layer-name'
-    name.textContent = def?.name ?? '?'
+    const baseName = def?.name ?? '?'
+    name.textContent = (defCounts.get(placed.defId) ?? 0) > 1
+      ? `${baseName} #${placed.instanceNum}`
+      : baseName
 
     const actions = document.createElement('div')
     actions.className = 'layer-actions'
-    actions.appendChild(iconBtn(placed.hidden ? ICON.eyeClosed : ICON.eyeOpen,  placed.hidden ? 'Show'   : 'Hide',   'layer-btn',               placed.id, 'visibility'))
-    actions.appendChild(iconBtn(placed.locked ? ICON.lockClosed : ICON.lockOpen, placed.locked ? 'Unlock' : 'Lock',  placed.locked ? 'layer-btn active' : 'layer-btn', placed.id, 'lock'))
-    actions.appendChild(iconBtn(ICON.trash, 'Remove', 'layer-btn layer-btn-del', placed.id, 'delete'))
+    actions.appendChild(iconBtn(placed.hidden ? ICON.eyeClosed : ICON.eyeOpen,   placed.hidden  ? 'Show'     : 'Hide',   'layer-btn',                            placed.id, 'visibility'))
+    actions.appendChild(iconBtn(placed.locked ? ICON.lockClosed : ICON.lockOpen, placed.locked  ? 'Unlock'   : 'Lock',  placed.locked  ? 'layer-btn active' : 'layer-btn', placed.id, 'lock'))
+    actions.appendChild(iconBtn(ICON.rotate, placed.rotated ? 'Unrotate' : 'Rotate', placed.rotated ? 'layer-btn active' : 'layer-btn', placed.id, 'rotate'))
+    actions.appendChild(iconBtn(ICON.trash,  'Remove', 'layer-btn layer-btn-del', placed.id, 'delete'))
 
+    li.appendChild(colorDot)
     li.appendChild(name)
     li.appendChild(actions)
+    list.appendChild(li)
+  }
+}
+
+function resolveEndpoint(hole: string, state: AppState): string {
+  if (hole.includes(':')) {
+    const rail = hole.slice(0, hole.lastIndexOf(':'))
+    if (rail === 'top+' || rail === 'bottom+') return 'VCC'
+    if (rail === 'top-' || rail === 'bottom-') return 'GND'
+    return hole
+  }
+  for (const placed of state.placedComponents) {
+    const def = state.componentLibrary.find(d => d.id === placed.defId)
+    if (!def) continue
+    for (const pin of def.pins) {
+      if (getComponentPinHole(placed, pin, def) === hole) return `${def.name} ${pin.name}`
+    }
+  }
+  return hole
+}
+
+export function renderWiresList(list: HTMLElement, state: AppState): void {
+  list.innerHTML = ''
+
+  if (state.wires.length === 0) {
+    const empty = document.createElement('li')
+    empty.className   = 'layer-empty'
+    empty.textContent = 'No wires yet'
+    list.appendChild(empty)
+    return
+  }
+
+  for (const wire of [...state.wires].reverse()) {
+    const li = document.createElement('li')
+    li.className = ['wire-item', wire.id === state.selectedId ? 'selected' : ''].filter(Boolean).join(' ')
+    li.dataset.wireId = wire.id
+
+    const from = document.createElement('span')
+    from.className   = 'wire-endpoint'
+    from.textContent = resolveEndpoint(wire.from, state)
+
+    const sep = document.createElement('span')
+    sep.className   = 'wire-sep'
+    sep.textContent = '↔'
+
+    const to = document.createElement('span')
+    to.className   = 'wire-endpoint'
+    to.textContent = resolveEndpoint(wire.to, state)
+
+    const del = document.createElement('button')
+    del.className   = 'layer-btn layer-btn-del'
+    del.title       = 'Delete wire'
+    del.innerHTML   = ICON.trash
+    del.dataset.wireId = wire.id
+    del.dataset.action = 'delete-wire'
+
+    li.appendChild(from)
+    li.appendChild(sep)
+    li.appendChild(to)
+    li.appendChild(del)
     list.appendChild(li)
   }
 }

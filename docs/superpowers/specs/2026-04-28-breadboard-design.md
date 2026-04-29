@@ -123,7 +123,7 @@ breadboard/
 SVG canvas with a fixed hole pitch (8px per grid cell). Four layers, bottom to top:
 
 1. **Board layer** — background rects for main grid halves and power rails; row/column labels
-2. **Wire layer** — `<line>` per wire; color-coded (red for connections to +, black for −, gray for signal)
+2. **Wire layer** — `<line>` per wire; all wires render in a neutral color (e.g. dark blue) in v1; color-coding by net type is a future enhancement
 3. **Component layer** — `<rect>` per component body; `<circle>` per pin; pin name labels; body colored by type. Body structure leaves room for a future `<image>` overlay for photos.
 4. **Drag preview layer** — in-progress wire line and component ghost (always on top, removed on commit/cancel)
 

@@ -5,6 +5,7 @@ import {
   ROW_Y_UNITS, SVG_WIDTH, SVG_HEIGHT, getHolePosition,
 } from './board'
 import { getComponentPinHole } from './components'
+import { getColor } from './colors'
 
 function svgEl<K extends keyof SVGElementTagNameMap>(tag: K): SVGElementTagNameMap[K] {
   return document.createElementNS(SVG_NS, tag) as SVGElementTagNameMap[K]
@@ -173,11 +174,13 @@ function renderWireLayer(svg: SVGSVGElement, state: AppState): void {
 
 function renderComponentLayer(svg: SVGSVGElement, state: AppState): void {
   const layer = getLayer(svg, 'component-layer')
+  const defCounts = new Map<string, number>()
+  for (const p of state.placedComponents) defCounts.set(p.defId, (defCounts.get(p.defId) ?? 0) + 1)
   for (const placed of state.placedComponents) {
     if (placed.hidden) continue
     const def = state.componentLibrary.find(d => d.id === placed.defId)
     if (!def) continue
-    renderPlacedComponent(layer, placed, def, state.selectedId)
+    renderPlacedComponent(layer, placed, def, state.selectedId, defCounts)
   }
 }
 
@@ -186,6 +189,7 @@ function renderPlacedComponent(
   placed: PlacedComponent,
   def: ComponentDef,
   selectedId: string | null,
+  defCounts: Map<string, number>,
 ): void {
   const anchorYUnit = ROW_Y_UNITS[placed.anchorRow]
   const anchorX = MARGIN_LEFT + (placed.anchorCol - 1) * PITCH
@@ -199,14 +203,19 @@ function renderPlacedComponent(
   const g = svgEl('g')
   g.dataset.componentId = placed.id
 
+  const color      = getColor(placed.colorIdx)
+  const isSelected = placed.id === selectedId
+
   const body = svgEl('rect')
   body.setAttribute('x', String(x))
   body.setAttribute('y', String(y))
   body.setAttribute('width', String(w))
   body.setAttribute('height', String(h))
-  const bodyClass = ['component-body', placed.id === selectedId ? 'selected' : '', placed.locked ? 'locked' : ''].filter(Boolean).join(' ')
+  const bodyClass = ['component-body', isSelected ? 'selected' : '', placed.locked ? 'locked' : ''].filter(Boolean).join(' ')
   body.setAttribute('class', bodyClass)
   body.setAttribute('pointer-events', placed.locked ? 'none' : 'auto')
+  body.style.fill   = color.fill
+  body.style.stroke = isSelected ? 'var(--accent)' : placed.locked ? 'var(--amber)' : color.stroke
   body.dataset.componentId = placed.id
   g.appendChild(body)
 
@@ -215,7 +224,10 @@ function renderPlacedComponent(
   nameLabel.setAttribute('y', String(y + h / 2 + 3))
   nameLabel.setAttribute('text-anchor', 'middle')
   nameLabel.setAttribute('class', 'component-label')
-  nameLabel.textContent = def.name
+  nameLabel.style.fill = color.stroke
+  nameLabel.textContent = (defCounts.get(placed.defId) ?? 0) > 1
+    ? `${def.name} #${placed.instanceNum}`
+    : def.name
   g.appendChild(nameLabel)
 
   for (const pin of def.pins) {
@@ -230,7 +242,8 @@ function renderPlacedComponent(
     circle.dataset.hole = addr
     g.appendChild(circle)
 
-    const labelY = pin.row === 'top'
+    const effectiveRow = placed.rotated ? (pin.row === 'top' ? 'bottom' : 'top') : pin.row
+    const labelY = effectiveRow === 'top'
       ? py - HOLE_RADIUS - 2
       : py + HOLE_RADIUS + 7
 
@@ -239,6 +252,7 @@ function renderPlacedComponent(
     label.setAttribute('y', String(labelY))
     label.setAttribute('text-anchor', 'middle')
     label.setAttribute('class', 'pin-label')
+    label.style.fill = color.stroke
     label.textContent = pin.name
     g.appendChild(label)
   }
@@ -253,9 +267,23 @@ const PENCIL_ICON = `<svg width="12" height="12" viewBox="0 0 24 24" fill="none"
   <path d="M16.5 3.5a2.121 2.121 0 013 3L7 19l-4 1 1-4L16.5 3.5z"/>
 </svg>`
 
-export function renderSidebar(list: HTMLElement, library: ComponentDef[], editingId: string | null = null): void {
+export function renderSidebar(
+  list: HTMLElement,
+  library: ComponentDef[],
+  recentIds: string[],
+  onDismiss: (defId: string) => void,
+  editingId: string | null = null,
+): void {
   list.innerHTML = ''
-  for (const def of library) {
+  const defs = recentIds.map(id => library.find(d => d.id === id)).filter(Boolean) as ComponentDef[]
+  if (defs.length === 0) {
+    const hint = document.createElement('li')
+    hint.className   = 'comp-item-hint'
+    hint.textContent = 'Search above to place components'
+    list.appendChild(hint)
+    return
+  }
+  for (const def of defs) {
     const li = document.createElement('li')
     li.dataset.defId = def.id
     if (def.id === editingId) li.classList.add('editing')
@@ -271,8 +299,15 @@ export function renderSidebar(list: HTMLElement, library: ComponentDef[], editin
     editBtn.dataset.action = 'edit'
     editBtn.dataset.defId  = def.id
 
+    const dismissBtn = document.createElement('button')
+    dismissBtn.className   = 'comp-del-btn'
+    dismissBtn.title       = 'Remove from recents'
+    dismissBtn.textContent = '×'
+    dismissBtn.addEventListener('click', (e) => { e.stopPropagation(); onDismiss(def.id) })
+
     li.appendChild(nameSpan)
     li.appendChild(editBtn)
+    li.appendChild(dismissBtn)
     list.appendChild(li)
   }
 }

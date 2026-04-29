@@ -29,6 +29,11 @@
       <button class="zoom-btn" id="zoom-out" title="Zoom out (−)">−</button>
       <span id="zoom-label" title="Reset zoom">100%</span>
       <button class="zoom-btn" id="zoom-in"  title="Zoom in (+)">+</button>
+      <button class="zoom-btn" id="zoom-fit" title="Fit to screen">
+        <svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" style="pointer-events:none">
+          <path d="M1 4V1h3M8 1h3v3M11 8v3H8M4 11H1V8"/>
+        </svg>
+      </button>
     </div>
   </header>
 
@@ -37,11 +42,21 @@
 
     <!-- Left: library + add component form -->
     <aside id="sidebar">
-      <div class="panel-section">
-        <div class="panel-label">Library</div>
-        <ul id="component-list"></ul>
+
+      <div class="panel-label" data-label="library">Library</div>
+
+      <div id="library-search-wrap">
+        <input id="library-search" type="text" placeholder="Search…" autocomplete="off" spellcheck="false" />
+        <button id="library-search-clear" tabindex="-1" title="Clear">×</button>
+        <ul id="library-dropdown"></ul>
       </div>
-      <div class="panel-section">
+
+      <div class="panel-label" id="recents-label" data-label="recents" style="display:none">Recents</div>
+      <ul id="component-list"></ul>
+
+      <button id="add-component-toggle">+ Add component</button>
+
+      <div id="add-component-section" style="display:none">
         <div class="panel-label" id="form-panel-label">Add component</div>
         <div id="add-form-body">
           <form id="add-component-form">
@@ -54,14 +69,16 @@
             <label>Height (pitch)
               <input id="comp-rowspan" type="number" min="1" max="16" placeholder="e.g. 9" required />
             </label>
-            <label>Pins — top row left→right, then bottom row
-              <textarea id="comp-pins" rows="5" placeholder="VCC&#10;GND&#10;SDA&#10;SCL"></textarea>
+            <label>Pins — top row, then bottom row (space or newline separated)
+              <textarea id="comp-pins" rows="5" placeholder="VCC GND SDA&#10;SCL INT RST"></textarea>
             </label>
             <button type="submit" id="form-submit-btn">Add to library</button>
             <button type="button" id="form-cancel-btn" style="display:none">Cancel</button>
+            <button type="button" id="form-delete-btn" style="display:none">Delete from library</button>
           </form>
         </div>
       </div>
+
     </aside>
 
     <div id="sidebar-resize-handle" title="Drag to resize"></div>
@@ -71,24 +88,34 @@
       <div id="canvas-scroll-area">
         <div id="canvas-container"></div>
       </div>
+      <div id="table-resize-handle" title="Drag to resize"></div>
       <div id="table-container">
         <div class="panel-label">Connections</div>
         <div id="table-inner"></div>
       </div>
     </main>
 
+    <div id="layers-resize-handle" title="Drag to resize"></div>
+
     <!-- Right: placed components (layers panel) -->
     <aside id="layers-panel">
-      <div class="panel-label" style="padding-top:12px">Board</div>
+      <div class="panel-label" id="components-label" style="padding-top:12px">Components</div>
       <ul id="layers-list"></ul>
+      <div class="panel-label" id="wires-label">Wires</div>
+      <ul id="wires-list"></ul>
     </aside>
 
   </div>
 
   <!-- Context menu -->
   <div id="context-menu">
-    <ul><li id="ctx-toggle-lock"></li></ul>
+    <ul>
+      <li id="ctx-rotate">Rotate</li>
+      <li id="ctx-toggle-lock"></li>
+    </ul>
   </div>
+
+  <div id="color-picker"></div>
 
   <script type="module" src="/src/main.ts"></script>
 </body>
