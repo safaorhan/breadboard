@@ -10,8 +10,9 @@ export interface PinRef {
 }
 
 export interface Net {
-  root: string
-  pins: PinRef[]
+  root:    string
+  pins:    PinRef[]
+  wireIds: string[]
 }
 
 class UnionFind {
@@ -54,6 +55,7 @@ export function analyzeNets(state: AppState): Net[] {
     const def = state.componentLibrary.find(d => d.id === placed.defId)
     if (!def) continue
     for (const pin of def.pins) {
+      if (pin.name === '*') continue
       const hole = getComponentPinHole(placed, pin, def)
       const root = uf.find(hole)
       if (!netMap.has(root)) netMap.set(root, [])
@@ -68,5 +70,9 @@ export function analyzeNets(state: AppState): Net[] {
 
   return Array.from(netMap.entries())
     .filter(([, pins]) => pins.length >= 2)
-    .map(([root, pins]) => ({ root, pins }))
+    .map(([root, pins]) => ({
+      root,
+      pins,
+      wireIds: state.wires.filter(w => uf.find(w.from) === root).map(w => w.id),
+    }))
 }

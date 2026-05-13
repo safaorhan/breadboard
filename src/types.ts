@@ -30,10 +30,32 @@ export interface Wire {
   to: string
 }
 
+export interface JumperDef {
+  color: string   // hex e.g. "#ff0000"
+  pitch: number   // Euclidean distance in pitch units; unique within a set
+}
+
+export interface JumperSet {
+  id:      string
+  name:    string
+  jumpers: JumperDef[]
+}
+
+export interface Resistor {
+  id:    string
+  from:  string      // hole address
+  to:    string      // hole address
+  value: string      // e.g. "1K", "470Ω"
+}
+
 export interface AppState {
-  placedComponents: PlacedComponent[]
-  wires: Wire[]
-  componentLibrary: ComponentDef[]
-  selectedId: string | null
-  selectedType: 'component' | 'wire' | null
+  placedComponents:  PlacedComponent[]
+  wires:             Wire[]
+  resistors:         Resistor[]
+  jumperSets:        JumperSet[]        // all available sets (system + user)
+  activeJumperSetId: string | null
+  jumperLibrary:     JumperDef[]        // jumpers from the active set
+  componentLibrary:  ComponentDef[]
+  selectedId:        string | null
+  selectedType:      'component' | 'wire' | 'resistor' | null
 }

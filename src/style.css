@@ -121,6 +121,17 @@ body {
   user-select: none;
 }
 
+/* ─── Collapsible panel labels ──────────────────────────────────────────── */
+.panel-label.collapsible {
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  user-select: none;
+}
+.panel-label.collapsible::after  { content: '▾'; font-size: 9px; color: var(--text-3); }
+.panel-label.collapsible.collapsed::after { content: '▸'; }
+
 /* ─── Shared: panel section divider ────────────────────────────────────── */
 .panel-section {
   display: flex;
@@ -128,6 +139,196 @@ body {
   border-bottom: 1px solid var(--border);
 }
 .panel-section:last-child { border-bottom: none; }
+
+/* ─── Wire color dot (wires panel) ─────────────────────────────────────── */
+.wire-color-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex-shrink: 0;
+  border: 1px solid rgba(0,0,0,0.15);
+}
+
+/* ─── Jumper library (sidebar) ──────────────────────────────────────────── */
+#jumper-library-toggle {
+  width: 100%;
+  padding: 7px 12px;
+  background: none;
+  border: none;
+  border-top: 1px solid var(--border);
+  border-bottom: 1px solid var(--border);
+  color: var(--text-2);
+  font-size: 11px;
+  font-weight: 600;
+  font-family: inherit;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  cursor: pointer;
+  text-align: left;
+  flex-shrink: 0;
+  transition: background 0.1s;
+}
+#jumper-library-toggle:hover      { background: var(--bg-hover); }
+#jumper-library-toggle.open       { color: var(--text-2); }
+
+#jumper-list {
+  list-style: none;
+  padding: 2px 8px 4px;
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+
+.jumper-item {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  padding: 4px 6px;
+  border-radius: var(--r);
+}
+.jumper-item:hover { background: var(--bg-hover); }
+.jumper-item.editing { background: #fff8e6; }
+
+.jumper-edit-btn {
+  opacity: 0;
+  background: none;
+  border: none;
+  padding: 2px;
+  cursor: pointer;
+  color: var(--text-3);
+  display: flex;
+  align-items: center;
+  border-radius: 3px;
+  transition: opacity 0.1s, color 0.1s;
+}
+.jumper-item:hover .jumper-edit-btn { opacity: 1; }
+.jumper-item.editing .jumper-edit-btn { opacity: 1; color: var(--amber); }
+.jumper-edit-btn:hover { color: var(--accent); }
+
+.jumper-color-dot {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  flex-shrink: 0;
+  border: 1px solid rgba(0,0,0,0.18);
+}
+
+.jumper-info {
+  flex: 1;
+  font-size: 12px;
+  color: var(--text-2);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+#jumper-form-body {
+  padding: 6px 12px 10px;
+}
+#add-jumper-form {
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+}
+#add-jumper-form label {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  font-size: 10px;
+  font-weight: 600;
+  color: var(--text-3);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+#add-jumper-form input[type="text"],
+#add-jumper-form input[type="number"] {
+  background: var(--bg-panel);
+  border: 1px solid var(--border-mid);
+  color: var(--text-1);
+  border-radius: var(--r);
+  padding: 5px 7px;
+  font-size: 12px;
+  font-family: inherit;
+  outline: none;
+  transition: border-color 0.1s;
+}
+#add-jumper-form input:focus { border-color: var(--accent); box-shadow: 0 0 0 2px rgba(13,153,255,0.15); }
+#jumper-palette {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+  padding: 2px 0 4px;
+}
+.j-swatch {
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  border: 2px solid transparent;
+  cursor: pointer;
+  padding: 0;
+  flex-shrink: 0;
+  transition: transform 0.1s, border-color 0.1s;
+  outline: none;
+}
+.j-swatch:hover    { transform: scale(1.2); }
+.j-swatch.selected { border-color: var(--text-1); }
+.j-swatch-custom {
+  background: conic-gradient(red, yellow, lime, cyan, blue, magenta, red);
+  font-size: 11px;
+  font-weight: 700;
+  color: rgba(0,0,0,0.45);
+  line-height: 16px;
+}
+#jumper-submit-btn {
+  background: var(--accent);
+  color: #fff;
+  border: none;
+  border-radius: var(--r);
+  padding: 6px 10px;
+  cursor: pointer;
+  font-size: 12px;
+  font-weight: 500;
+  font-family: inherit;
+  transition: background 0.1s;
+}
+#jumper-submit-btn:hover { background: #2aabff; }
+#jumper-cancel-btn {
+  background: var(--bg-raised);
+  color: var(--text-2);
+  border: 1px solid var(--border-mid);
+  border-radius: var(--r);
+  padding: 6px 10px;
+  cursor: pointer;
+  font-size: 12px;
+  font-family: inherit;
+  transition: background 0.1s;
+}
+#jumper-cancel-btn:hover { background: var(--bg-hover); }
+
+/* ─── Jumper BoM ────────────────────────────────────────────────────────── */
+.bom-list {
+  list-style: none;
+  padding: 2px 16px 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+.bom-item {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  font-size: 11px;
+  color: var(--text-2);
+}
+.bom-color-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  flex-shrink: 0;
+  border: 1px solid rgba(0,0,0,0.18);
+}
+.bom-name  { flex: 1; }
+.bom-count { font-weight: 600; color: var(--text-1); }
 
 /* ─── Add-component toggle ──────────────────────────────────────────────── */
 #add-component-toggle {
@@ -375,7 +576,8 @@ body {
   opacity: 0;
   transition: opacity 0.1s, background 0.08s, color 0.08s;
 }
-#component-list li:hover .comp-del-btn { opacity: 1; }
+#component-list li:hover .comp-del-btn,
+.jumper-item:hover .comp-del-btn { opacity: 1; }
 .comp-del-btn:hover { color: var(--red); background: var(--bg-hover); }
 
 #add-component-form button[type="button"] {
@@ -483,6 +685,7 @@ body {
   display: block;
   cursor: crosshair;
   border-radius: 3px;
+  background-color: #faf8f4;
   box-shadow: 0 2px 8px rgba(0,0,0,0.12), 0 0 0 1px rgba(0,0,0,0.06);
 }
 #canvas-container svg.placing { cursor: cell; }
@@ -663,6 +866,14 @@ body {
   flex-shrink: 0;
 }
 
+.wire-len {
+  font-size: 10px;
+  color: var(--text-3);
+  flex-shrink: 0;
+  margin-left: auto;
+  padding-right: 4px;
+}
+
 .layer-empty {
   font-size: 11px;
   color: var(--text-3);
@@ -789,15 +1000,17 @@ body {
 #context-menu li:hover { background: var(--bg-hover); }
 
 /* ─── SVG: board background ─────────────────────────────────────────────── */
-.board-bg-top    { fill: #faf8f4; }
-.board-bg-bottom { fill: #faf8f4; }
-.rail-bg-plus    { fill: #fff2f2; }
-.rail-bg-minus   { fill: #f2f2ff; }
+.rail-bg-plus  { fill: #fff2f2; }
+.rail-bg-minus { fill: #f2f2ff; }
+.board-trench  { fill: rgba(0,0,0,0.13); }
+.rail-stripe-plus  { stroke: #cc6666; stroke-width: 1.5; }
+.rail-stripe-minus { stroke: #6666cc; stroke-width: 1.5; }
 
 /* ─── SVG: holes ────────────────────────────────────────────────────────── */
 .hole         { fill: #d4cfc7; stroke: #b8b2a8; stroke-width: 0.5; cursor: crosshair; }
 .hole:hover   { stroke: var(--accent); stroke-width: 1.5; fill: #c8cfe8; }
-.hole.occupied{ fill: #bfb9b1; }
+.hole.occupied          { fill: #8a8480; cursor: not-allowed; }
+.hole.occupied:hover    { fill: #8a8480; stroke: #dc2626; stroke-width: 1.5; }
 
 .power-hole          { fill: #d4cfc7; }
 .top-plus-hole       { stroke: #cc6666; stroke-width: 0.75; }
@@ -814,9 +1027,28 @@ body {
   pointer-events: none;
 }
 
+.hover-label {
+  fill: var(--accent);
+  font-size: 7px;
+  font-weight: 700;
+  font-family: -apple-system, monospace;
+  user-select: none;
+  pointer-events: none;
+}
+
+.rail-label {
+  font-size: 8px;
+  font-weight: 700;
+  font-family: -apple-system, monospace;
+  user-select: none;
+  pointer-events: none;
+}
+.rail-label-plus  { fill: #cc6666; }
+.rail-label-minus { fill: #6666cc; }
+
 /* ─── SVG: components ───────────────────────────────────────────────────── */
 .component-body {
-  fill-opacity: 0.88;
+  fill-opacity: 0.4;
   stroke-width: 1;
   cursor: move;
 }
@@ -838,10 +1070,64 @@ body {
 .pin-hole       { fill: #8a8478; cursor: crosshair; pointer-events: all; }
 .pin-hole:hover { fill: var(--accent); }
 
-/* ─── SVG: wires ────────────────────────────────────────────────────────── */
-.wire          { stroke: var(--accent); stroke-width: 1.5; stroke-linecap: round; cursor: pointer; }
-.wire:hover    { stroke-width: 2.5; }
-.wire.selected { stroke: var(--amber); stroke-width: 2; }
+/* ─── SVG: resistors ────────────────────────────────────────────────────── */
+.resistor-lead          { stroke: #a07840; stroke-width: 1.5; stroke-linecap: round; }
+.resistor-lead.selected { stroke: var(--accent); }
+.resistor-body          { fill: #e8c87a; stroke: #a07840; stroke-width: 1; }
+.resistor-body.selected { stroke: var(--accent); stroke-width: 1.5; }
+.resistor-value         { fill: #3a2010; font-size: 6px; font-family: 'SF Mono','Menlo','Consolas',monospace; font-weight: 700; user-select: none; }
 
-.preview-wire { stroke: var(--accent); stroke-width: 1.5; stroke-dasharray: 4 3; pointer-events: none; opacity: 0.7; }
+.resistor-list-value {
+  font-size: 11px;
+  font-weight: 600;
+  color: #a07840;
+  font-family: 'SF Mono','Menlo','Consolas',monospace;
+  flex-shrink: 0;
+  min-width: 28px;
+}
+
+/* ─── Topbar draw tools ─────────────────────────────────────────────────── */
+#draw-tools {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.tool-btn {
+  background: none;
+  border: 1px solid var(--border-mid);
+  color: var(--text-2);
+  cursor: pointer;
+  width: 26px;
+  height: 26px;
+  border-radius: var(--r);
+  font-size: 12px;
+  font-weight: 700;
+  font-family: inherit;
+  transition: background 0.1s, color 0.1s, border-color 0.1s;
+}
+.tool-btn:hover         { background: var(--bg-hover); color: var(--text-1); }
+.tool-btn.active        { background: #fff5e6; color: #a07840; border-color: #a07840; }
+
+#resistor-value-input {
+  width: 54px;
+  background: var(--bg-raised);
+  border: 1px solid var(--border-mid);
+  color: var(--text-1);
+  border-radius: var(--r);
+  padding: 3px 6px;
+  font-size: 12px;
+  font-family: 'SF Mono','Menlo','Consolas',monospace;
+  outline: none;
+  transition: border-color 0.1s;
+}
+#resistor-value-input:focus { border-color: #a07840; box-shadow: 0 0 0 2px rgba(160,120,64,0.18); }
+
+/* ─── SVG: wires ────────────────────────────────────────────────────────── */
+.wire-border        { stroke: rgba(0,0,0,0.8); stroke-width: 3.5; stroke-linecap: round; pointer-events: none; }
+.wire               { stroke-width: 2; stroke-linecap: round; cursor: pointer; }
+.wire:hover,
+.wire.panel-hover   { stroke-width: 3; }
+.wire.selected      { stroke-width: 2.5; }
+
+.preview-wire { stroke-width: 1.5; stroke-dasharray: 4 3; pointer-events: none; opacity: 0.7; }
 .ghost-body   { fill: #e8f5ed; stroke: #2d8a50; stroke-width: 1; opacity: 0.5; pointer-events: none; }

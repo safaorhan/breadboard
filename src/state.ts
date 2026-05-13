@@ -1,60 +1,107 @@
-import type { AppState, ComponentDef, PlacedComponent } from './types'
-import { getComponentPinHole, PRESET_LIBRARY } from './components'
+import type { AppState, ComponentDef, JumperDef, JumperSet, PlacedComponent } from './types'
+import type { StoredJumperSet } from './db'
+import { getComponentPinHole } from './components'
 import { COMPONENT_COLORS } from './colors'
-
-const STORAGE_KEY = 'breadboard-state'
+import {
+  initializeDB,
+  saveProject,
+  saveComponentDef,
+  deleteComponentDef as dbDeleteComponentDef,
+  saveJumperSet,
+  type Project,
+} from './db'
 
 export const state: AppState = {
-  placedComponents: [],
-  wires: [],
-  componentLibrary: [...PRESET_LIBRARY],
-  selectedId: null,
-  selectedType: null,
+  placedComponents:  [],
+  wires:             [],
+  resistors:         [],
+  jumperSets:        [],
+  activeJumperSetId: null,
+  jumperLibrary:     [],
+  componentLibrary:  [],
+  selectedId:        null,
+  selectedType:      null,
 }
 
 const listeners: (() => void)[] = []
-let nextColorIdx = 0
+let nextColorIdx    = 0
+let activeProject: Project = {
+  id: '', name: 'Default', createdAt: 0, updatedAt: 0,
+  placedComponents: [], wires: [], resistors: [], activeJumperSetId: null,
+}
+let activeJumperSet: JumperSet | null = null
+let allJumperSets:   StoredJumperSet[] = []
 
-// ── Persistence ─────────────────────────────────────────────────────────────
+// ── Persistence ───────────────────────────────────────────────────────────────
 
-function save(): void {
-  try {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify({
-      componentLibrary: state.componentLibrary,
-      placedComponents: state.placedComponents,
-      wires:            state.wires,
-    }))
-  } catch { /* storage unavailable or quota exceeded */ }
+function saveStateToDB(): void {
+  activeProject.placedComponents  = state.placedComponents
+  activeProject.wires             = state.wires
+  activeProject.resistors         = state.resistors
+  activeProject.activeJumperSetId = state.activeJumperSetId
+  saveProject(activeProject).catch(() => {})
 }
 
-function load(): void {
-  try {
-    const raw = localStorage.getItem(STORAGE_KEY)
-    if (!raw) return
-    const data = JSON.parse(raw)
-    if (Array.isArray(data.componentLibrary)) state.componentLibrary = data.componentLibrary
-    if (Array.isArray(data.placedComponents)) {
-      state.placedComponents = data.placedComponents.map((p: PlacedComponent) => ({
-        ...p,
-        rotated:     p.rotated     ?? false,
-        colorIdx:    p.colorIdx    ?? 0,
-        instanceNum: p.instanceNum ?? 1,
-      }))
-      // advance color counter past any indices already in use
-      const maxIdx = state.placedComponents.reduce((m, p) => Math.max(m, p.colorIdx), -1)
-      nextColorIdx = maxIdx + 1
-    }
-    if (Array.isArray(data.wires)) state.wires = data.wires
-  } catch { /* corrupt / incompatible data — start fresh */ }
+function saveActiveJumperSet(): void {
+  if (!activeJumperSet) return
+  saveJumperSet({ ...activeJumperSet, source: 'user' }).catch(() => {})
 }
 
-load()
+// If no active set exists yet, create an empty user set on demand.
+function getOrCreateUserSet(): JumperSet {
+  if (activeJumperSet) return activeJumperSet
+  const set: JumperSet = { id: crypto.randomUUID(), name: 'My Jumpers', jumpers: [] }
+  activeJumperSet        = set
+  state.activeJumperSetId        = set.id
+  activeProject.activeJumperSetId = set.id
+  saveJumperSet({ ...set, source: 'user' }).catch(() => {})
+  return set
+}
 
-// ── Core ─────────────────────────────────────────────────────────────────────
+// ── Init ──────────────────────────────────────────────────────────────────────
+
+export async function initDB(): Promise<void> {
+  const { project, componentDefs, jumperSets } = await initializeDB()
+
+  activeProject = project
+
+  state.placedComponents = project.placedComponents.map((p: PlacedComponent) => ({
+    ...p,
+    rotated:     p.rotated     ?? false,
+    colorIdx:    p.colorIdx    ?? 0,
+    instanceNum: p.instanceNum ?? 1,
+  }))
+  state.wires     = project.wires
+  state.resistors = project.resistors
+
+  allJumperSets    = jumperSets
+  state.jumperSets = jumperSets
+
+  const requestedSet = jumperSets.find(s => s.id === project.activeJumperSetId) ?? null
+  // If the previously active set was a system preset that got purged on re-seed,
+  // fall back to the first available system set so the project isn't left with none.
+  activeJumperSet = requestedSet ?? jumperSets.find(s => s.source === 'system') ?? null
+
+  state.activeJumperSetId = activeJumperSet?.id ?? null
+  state.jumperLibrary     = activeJumperSet ? [...activeJumperSet.jumpers] : []
+
+  if (state.activeJumperSetId !== project.activeJumperSetId) {
+    activeProject.activeJumperSetId = state.activeJumperSetId
+    saveProject(activeProject).catch(() => {})
+  }
+
+  // StoredComponentDef extends ComponentDef, directly assignable
+  state.componentLibrary = componentDefs
+
+  const maxIdx = state.placedComponents.reduce((m, p) => Math.max(m, p.colorIdx), -1)
+  nextColorIdx = maxIdx + 1
+}
+
+// ── Core ──────────────────────────────────────────────────────────────────────
 
 function notify(): void {
   listeners.forEach(fn => fn())
-  save()
+  saveStateToDB()
 }
 
 export function onStateChange(fn: () => void): void {
@@ -62,20 +109,83 @@ export function onStateChange(fn: () => void): void {
 }
 
 export function _resetStateForTest(library: ComponentDef[]): void {
-  state.placedComponents = []
-  state.wires = []
-  state.componentLibrary = library
-  state.selectedId = null
-  state.selectedType = null
-  nextColorIdx = 0
+  state.placedComponents  = []
+  state.wires             = []
+  state.resistors         = []
+  state.jumperSets        = []
+  state.activeJumperSetId = null
+  state.jumperLibrary     = []
+  state.componentLibrary  = library
+  state.selectedId        = null
+  state.selectedType      = null
+  nextColorIdx    = 0
+  activeJumperSet = null
+  allJumperSets   = []
 }
+
+export function setActiveJumperSet(id: string | null): void {
+  const set = allJumperSets.find(s => s.id === id) ?? null
+  activeJumperSet         = set
+  state.activeJumperSetId = set?.id ?? null
+  state.jumperLibrary     = set ? [...set.jumpers] : []
+  notify()
+}
+
+// ── Jumper library ────────────────────────────────────────────────────────────
+
+export function addJumperDef(color: string, pitch: number): void {
+  const set = getOrCreateUserSet()
+  set.jumpers.push({ color, pitch })
+  state.jumperLibrary = [...set.jumpers]
+  saveActiveJumperSet()
+  notify()
+}
+
+export function removeJumperDef(pitch: number): void {
+  if (!activeJumperSet) return
+  activeJumperSet.jumpers = activeJumperSet.jumpers.filter(j => j.pitch !== pitch)
+  state.jumperLibrary = [...activeJumperSet.jumpers]
+  saveActiveJumperSet()
+  notify()
+}
+
+export function updateJumperDef(originalPitch: number, updates: JumperDef): void {
+  if (!activeJumperSet) return
+  const idx = activeJumperSet.jumpers.findIndex(j => j.pitch === originalPitch)
+  if (idx === -1) return
+  activeJumperSet.jumpers[idx] = updates
+  state.jumperLibrary = [...activeJumperSet.jumpers]
+  saveActiveJumperSet()
+  notify()
+}
+
+// ── Resistors ─────────────────────────────────────────────────────────────────
+
+export function addResistor(from: string, to: string, value = '1K'): void {
+  state.resistors.push({ id: crypto.randomUUID(), from, to, value })
+  notify()
+}
+
+export function removeResistor(id: string): void {
+  state.resistors = state.resistors.filter(r => r.id !== id)
+  notify()
+}
+
+export function updateResistorValue(id: string, value: string): void {
+  const r = state.resistors.find(r => r.id === id)
+  if (!r) return
+  r.value = value
+  notify()
+}
+
+// ── Components ────────────────────────────────────────────────────────────────
 
 export function rotateComponent(id: string): void {
   const comp = state.placedComponents.find(c => c.id === id)
   if (!comp) return
   const def = state.componentLibrary.find(d => d.id === comp.defId)
   if (def) {
-    const pinHoles = new Set(def.pins.map(p => getComponentPinHole(comp, p, def)))
+    const pinHoles = new Set(def.pins.filter(p => p.name !== '*').map(p => getComponentPinHole(comp, p, def)))
     state.wires = state.wires.filter(w => !pinHoles.has(w.from) && !pinHoles.has(w.to))
   }
   comp.rotated = !comp.rotated
@@ -127,7 +237,7 @@ export function removeComponent(id: string): void {
   if (!comp) return
   const def = state.componentLibrary.find(d => d.id === comp.defId)
   if (def) {
-    const pinHoles = new Set(def.pins.map(p => getComponentPinHole(comp, p, def)))
+    const pinHoles = new Set(def.pins.filter(p => p.name !== '*').map(p => getComponentPinHole(comp, p, def)))
     state.wires = state.wires.filter(w => !pinHoles.has(w.from) && !pinHoles.has(w.to))
   }
   state.placedComponents = state.placedComponents.filter(c => c.id !== id)
@@ -150,12 +260,13 @@ export function removeComponentDef(id: string): void {
   const def       = state.componentLibrary.find(d => d.id === id)
   if (def) {
     for (const comp of instances) {
-      const pinHoles = new Set(def.pins.map(p => getComponentPinHole(comp, p, def)))
+      const pinHoles = new Set(def.pins.filter(p => p.name !== '*').map(p => getComponentPinHole(comp, p, def)))
       state.wires = state.wires.filter(w => !pinHoles.has(w.from) && !pinHoles.has(w.to))
     }
   }
   state.placedComponents = state.placedComponents.filter(c => c.defId !== id)
   state.componentLibrary = state.componentLibrary.filter(d => d.id !== id)
+  dbDeleteComponentDef(id).catch(() => {})
   notify()
 }
 
@@ -167,7 +278,9 @@ export function setComponentColor(id: string, colorIdx: number): void {
 }
 
 export function addComponentDef(def: Omit<ComponentDef, 'id'>): void {
-  state.componentLibrary.push({ ...def, id: crypto.randomUUID() })
+  const newDef = { ...def, id: crypto.randomUUID() }
+  state.componentLibrary.push(newDef)
+  saveComponentDef({ ...newDef, source: 'user' }).catch(() => {})
   notify()
 }
 
@@ -175,6 +288,7 @@ export function updateComponentDef(id: string, updates: Omit<ComponentDef, 'id'>
   const idx = state.componentLibrary.findIndex(d => d.id === id)
   if (idx === -1) return
   state.componentLibrary[idx] = { ...updates, id }
+  saveComponentDef({ ...updates, id, source: 'user' }).catch(() => {})
   notify()
 }
 

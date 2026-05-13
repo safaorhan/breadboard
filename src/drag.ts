@@ -1,12 +1,19 @@
 import {
   state,
   addWire, removeWire,
+  addResistor, removeResistor,
   placeComponent, moveComponent, removeComponent,
   selectItem,
 } from './state'
-import { snapToHole, BOARD_COLS, PITCH, MARGIN_LEFT, MARGIN_TOP, ROW_Y_UNITS } from './board'
-import { clearLayer, renderGhostComponent, renderPreviewWire } from './render'
+import { snapToHole, BOARD_COLS, PITCH, MARGIN_LEFT, MARGIN_TOP, ROW_Y_UNITS, rowFromYUnit, getHolePosition } from './board'
+import { clearLayer, renderGhostComponent, renderPreviewWire, renderPreviewResistor } from './render'
+import { getComponentPinHole, getAllOccupiedHoles } from './components'
 import type { ComponentDef } from './types'
+
+let resistorMode = false
+let defaultResistorValue = '1K'
+export function setResistorMode(active: boolean):       void { resistorMode = active }
+export function setDefaultResistorValue(val: string):   void { defaultResistorValue = val }
 
 type DragMode =
   | { mode: 'idle' }
@@ -39,8 +46,9 @@ export function cancelCurrentDrag(): void {
 
 export function deleteSelected(): void {
   if (!state.selectedId) return
-  if (state.selectedType === 'component') removeComponent(state.selectedId)
+  if (state.selectedType === 'component')  removeComponent(state.selectedId)
   else if (state.selectedType === 'wire')  removeWire(state.selectedId)
+  else if (state.selectedType === 'resistor') removeResistor(state.selectedId)
   selectItem(null, null)
 }
 
@@ -53,19 +61,28 @@ function getSVGPoint(e: MouseEvent): { x: number; y: number } {
   }
 }
 
-// Returns the main-grid row letter whose y-unit, when used as anchorRow, produces a valid
-// bottom pin row (anchorYUnit + def.rowSpan exists as a main-grid row). Picks the row
-// whose center is closest to svgY.
-function snapAnchorRow(svgY: number, def: ComponentDef): string {
+// Returns true if every real (non-*) pin lands on a valid main-grid row when the
+// component is anchored at `row` with the given rotation.
+function isValidAnchorRow(row: string, def: ComponentDef, rotated: boolean): boolean {
+  const anchorYUnit = ROW_Y_UNITS[row]
+  const realPins = def.pins.filter(p => p.name !== '*')
+  if (realPins.length === 0) return true
+  for (const pin of realPins) {
+    const side = rotated ? (pin.row === 'top' ? 'bottom' : 'top') : pin.row
+    const targetYUnit = side === 'top' ? anchorYUnit : anchorYUnit + def.rowSpan
+    if (rowFromYUnit(targetYUnit) === undefined) return false
+  }
+  return true
+}
+
+function snapAnchorRow(svgY: number, def: ComponentDef, rotated = false): string {
   const mainRows = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J']
   let bestRow = 'E'
   let bestDist = Infinity
 
   for (const row of mainRows) {
-    const anchorYUnit = ROW_Y_UNITS[row]
-    const bottomYUnit = anchorYUnit + def.rowSpan
-    if (!mainRows.some(r => ROW_Y_UNITS[r] === bottomYUnit)) continue
-    const rowY = MARGIN_TOP + anchorYUnit * PITCH
+    if (!isValidAnchorRow(row, def, rotated)) continue
+    const rowY = MARGIN_TOP + ROW_Y_UNITS[row] * PITCH
     const dist = Math.abs(svgY - rowY)
     if (dist < bestDist) { bestDist = dist; bestRow = row }
   }
@@ -80,8 +97,9 @@ function deltaToAnchor(svgX: number, svgY: number, dm: MovingMode, def: Componen
   const rawCol   = dm.startAnchorCol + deltaCol
   const col      = Math.max(1, Math.min(rawCol, BOARD_COLS - def.colSpan + 1))
 
+  const rotated = state.placedComponents.find(c => c.id === dm.componentId)?.rotated ?? false
   const startAnchorSVGY = MARGIN_TOP + ROW_Y_UNITS[dm.startAnchorRow] * PITCH
-  const row = snapAnchorRow(startAnchorSVGY + (svgY - dm.startY), def)
+  const row = snapAnchorRow(startAnchorSVGY + (svgY - dm.startY), def, rotated)
 
   return { col, row }
 }
@@ -91,13 +109,28 @@ function snapAnchorCol(svgX: number, def: ComponentDef): number {
   return Math.max(1, Math.min(raw, BOARD_COLS - def.colSpan + 1))
 }
 
+function componentPinsFree(def: ComponentDef, anchorCol: number, anchorRow: string, excludeId?: string): boolean {
+  const occupied = getAllOccupiedHoles(state, excludeId)
+  const placed = { anchorCol, anchorRow, rotated: false } as Parameters<typeof getComponentPinHole>[0]
+  // also check with any rotation the component currently has
+  const comp = excludeId ? state.placedComponents.find(c => c.id === excludeId) : undefined
+  if (comp) placed.rotated = comp.rotated
+  for (const pin of def.pins) {
+    if (pin.name === '*') continue
+    if (occupied.has(getComponentPinHole(placed, pin, def))) return false
+  }
+  return true
+}
+
 function onMouseDown(e: MouseEvent): void {
   if (e.button !== 0) return
   const target = e.target as SVGElement
 
   if (target.dataset.hole && dragMode.mode !== 'placing') {
+    const hole = target.dataset.hole
+    if (getAllOccupiedHoles(state).has(hole)) return
     e.stopPropagation()
-    dragMode = { mode: 'wiring', fromHole: target.dataset.hole }
+    dragMode = { mode: 'wiring', fromHole: hole }
     return
   }
 
@@ -123,7 +156,8 @@ function onMouseMove(e: MouseEvent): void {
   const { x, y } = getSVGPoint(e)
 
   if (dragMode.mode === 'wiring') {
-    renderPreviewWire(svg, dragMode.fromHole, x, y)
+    if (resistorMode) renderPreviewResistor(svg, dragMode.fromHole, x, y, defaultResistorValue)
+    else              renderPreviewWire(svg, dragMode.fromHole, x, y, state.jumperLibrary)
     return
   }
 
@@ -149,8 +183,17 @@ function onMouseMove(e: MouseEvent): void {
 function onMouseUp(e: MouseEvent): void {
   if (dragMode.mode === 'wiring') {
     const { x, y } = getSVGPoint(e)
-    const toHole = snapToHole(x, y)
-    if (toHole && toHole !== dragMode.fromHole) addWire(dragMode.fromHole, toHole)
+    const toHole   = snapToHole(x, y)
+    if (toHole && toHole !== dragMode.fromHole && !getAllOccupiedHoles(state).has(toHole)) {
+      if (resistorMode) {
+        const p1   = getHolePosition(dragMode.fromHole)
+        const p2   = getHolePosition(toHole)
+        const dist = Math.sqrt((p2.x - p1.x) ** 2 + (p2.y - p1.y) ** 2) / PITCH
+        if (dist >= 2 && dist <= 20) addResistor(dragMode.fromHole, toHole, defaultResistorValue)
+      } else {
+        addWire(dragMode.fromHole, toHole)
+      }
+    }
     dragMode = { mode: 'idle' }
     clearLayer(svg, 'preview-layer')
     return
@@ -164,7 +207,9 @@ function onMouseUp(e: MouseEvent): void {
       const def = state.componentLibrary.find(d => d.id === comp.defId)
       if (def) {
         const { col, row } = deltaToAnchor(x, y, dm, def)
-        moveComponent(dm.componentId, col, row)
+        if (componentPinsFree(def, col, row, dm.componentId)) {
+          moveComponent(dm.componentId, col, row)
+        }
       }
     }
     dragMode = { mode: 'idle' }
@@ -180,6 +225,11 @@ function onSVGClick(e: MouseEvent): void {
     return
   }
 
+  if (target.dataset.resistorId) {
+    selectItem(target.dataset.resistorId, 'resistor')
+    return
+  }
+
   if (target.dataset.componentId) {
     selectItem(target.dataset.componentId, 'component')
     return
@@ -190,10 +240,14 @@ function onSVGClick(e: MouseEvent): void {
     const def = state.componentLibrary.find(d => d.id === dm.defId)
     if (!def) return
     const { x, y } = getSVGPoint(e)
-    placeComponent(dm.defId, snapAnchorCol(x, def), snapAnchorRow(y, def))
-    dragMode = { mode: 'idle' }
-    clearLayer(svg, 'preview-layer')
-    svg.classList.remove('placing')
+    const col = snapAnchorCol(x, def)
+    const row = snapAnchorRow(y, def)
+    if (componentPinsFree(def, col, row)) {
+      placeComponent(dm.defId, col, row)
+      dragMode = { mode: 'idle' }
+      clearLayer(svg, 'preview-layer')
+      svg.classList.remove('placing')
+    }
     return
   }
 

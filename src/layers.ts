@@ -1,6 +1,8 @@
-import type { PlacedComponent, ComponentDef, AppState } from './types'
+import type { PlacedComponent, ComponentDef, AppState, Resistor } from './types'
 import { getColor } from './colors'
 import { getComponentPinHole } from './components'
+import { wireColor } from './jumpers'
+import { getHolePosition, PITCH } from './board'
 
 // Lucide-style icons (24×24 viewBox, stroke-based)
 const ICON = {
@@ -123,10 +125,57 @@ function resolveEndpoint(hole: string, state: AppState): string {
     const def = state.componentLibrary.find(d => d.id === placed.defId)
     if (!def) continue
     for (const pin of def.pins) {
+      if (pin.name === '*') continue
       if (getComponentPinHole(placed, pin, def) === hole) return `${def.name} ${pin.name}`
     }
   }
   return hole
+}
+
+export function renderResistorsList(list: HTMLElement, state: AppState): void {
+  list.innerHTML = ''
+  if (state.resistors.length === 0) {
+    const empty = document.createElement('li')
+    empty.className   = 'layer-empty'
+    empty.textContent = 'No resistors yet'
+    list.appendChild(empty)
+    return
+  }
+  for (const r of [...state.resistors].reverse()) {
+    const li = document.createElement('li')
+    li.className = ['wire-item', r.id === state.selectedId ? 'selected' : ''].filter(Boolean).join(' ')
+    li.dataset.resistorId = r.id
+
+    const val = document.createElement('span')
+    val.className   = 'resistor-list-value'
+    val.textContent = r.value
+
+    const from = document.createElement('span')
+    from.className   = 'wire-endpoint'
+    from.textContent = resolveEndpoint(r.from, state)
+
+    const sep = document.createElement('span')
+    sep.className   = 'wire-sep'
+    sep.textContent = '↔'
+
+    const to = document.createElement('span')
+    to.className   = 'wire-endpoint'
+    to.textContent = resolveEndpoint(r.to, state)
+
+    const del = document.createElement('button')
+    del.className      = 'layer-btn layer-btn-del'
+    del.title          = 'Delete resistor'
+    del.innerHTML      = ICON.trash
+    del.dataset.resistorId = r.id
+    del.dataset.action     = 'delete-resistor'
+
+    li.appendChild(val)
+    li.appendChild(from)
+    li.appendChild(sep)
+    li.appendChild(to)
+    li.appendChild(del)
+    list.appendChild(li)
+  }
 }
 
 export function renderWiresList(list: HTMLElement, state: AppState): void {
@@ -140,10 +189,19 @@ export function renderWiresList(list: HTMLElement, state: AppState): void {
     return
   }
 
-  for (const wire of [...state.wires].reverse()) {
+  const wireLen = (from: string, to: string) => {
+    const a = getHolePosition(from), b = getHolePosition(to)
+    return Math.sqrt((b.x - a.x) ** 2 + (b.y - a.y) ** 2) / PITCH
+  }
+
+  for (const wire of [...state.wires].sort((a, b) => wireLen(a.from, a.to) - wireLen(b.from, b.to))) {
     const li = document.createElement('li')
     li.className = ['wire-item', wire.id === state.selectedId ? 'selected' : ''].filter(Boolean).join(' ')
     li.dataset.wireId = wire.id
+
+    const dot = document.createElement('span')
+    dot.className        = 'wire-color-dot'
+    dot.style.background = wireColor(wire.from, wire.to, state.jumperLibrary)
 
     const from = document.createElement('span')
     from.className   = 'wire-endpoint'
@@ -157,6 +215,10 @@ export function renderWiresList(list: HTMLElement, state: AppState): void {
     to.className   = 'wire-endpoint'
     to.textContent = resolveEndpoint(wire.to, state)
 
+    const len = document.createElement('span')
+    len.className   = 'wire-len'
+    len.textContent = `${+wireLen(wire.from, wire.to).toFixed(1)}p`
+
     const del = document.createElement('button')
     del.className   = 'layer-btn layer-btn-del'
     del.title       = 'Delete wire'
@@ -164,9 +226,11 @@ export function renderWiresList(list: HTMLElement, state: AppState): void {
     del.dataset.wireId = wire.id
     del.dataset.action = 'delete-wire'
 
+    li.appendChild(dot)
     li.appendChild(from)
     li.appendChild(sep)
     li.appendChild(to)
+    li.appendChild(len)
     li.appendChild(del)
     list.appendChild(li)
   }

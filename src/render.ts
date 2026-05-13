@@ -1,11 +1,12 @@
-import type { AppState, ComponentDef, PlacedComponent } from './types'
+import type { AppState, ComponentDef, PlacedComponent, Wire } from './types'
 import {
   SVG_NS, PITCH, HOLE_RADIUS, MARGIN_LEFT, MARGIN_TOP,
   BOARD_COLS, TOP_ROWS, BOTTOM_ROWS, RAIL_NAMES,
-  ROW_Y_UNITS, SVG_WIDTH, SVG_HEIGHT, getHolePosition,
+  ROW_Y_UNITS, SVG_WIDTH, SVG_HEIGHT, getHolePosition, isRailHole, snapToHole,
 } from './board'
-import { getComponentPinHole } from './components'
+import { getComponentPinHole, getAllOccupiedHoles } from './components'
 import { getColor } from './colors'
+import { wireColor, COPPER_COLOR } from './jumpers'
 
 function svgEl<K extends keyof SVGElementTagNameMap>(tag: K): SVGElementTagNameMap[K] {
   return document.createElementNS(SVG_NS, tag) as SVGElementTagNameMap[K]
@@ -22,15 +23,29 @@ export function clearLayer(svg: SVGSVGElement, id: string): void {
 
 export function initSVG(container: HTMLElement): SVGSVGElement {
   const svg = svgEl('svg')
-  svg.setAttribute('width', String(SVG_WIDTH))
-  svg.setAttribute('height', String(SVG_HEIGHT))
+  svg.setAttribute('width',   String(SVG_WIDTH))
+  svg.setAttribute('height',  String(SVG_HEIGHT))
   svg.setAttribute('viewBox', `0 0 ${SVG_WIDTH} ${SVG_HEIGHT}`)
+  svg.setAttribute('fill',    '#faf8f4')
 
-  for (const id of ['board-layer', 'wire-layer', 'component-layer', 'preview-layer']) {
+  for (const id of ['board-layer', 'wire-layer', 'resistor-layer', 'component-layer', 'preview-layer']) {
     const g = svgEl('g')
     g.id = id
     svg.appendChild(g)
   }
+
+  // Hover-label overlay — must be last so it renders above everything
+  const hoverGroup = svgEl('g')
+  hoverGroup.id = 'hover-labels'
+  hoverGroup.setAttribute('pointer-events', 'none')
+  for (const id of ['hover-col-top', 'hover-col-bottom', 'hover-row-left', 'hover-row-right']) {
+    const t = svgEl('text')
+    t.id = id
+    t.setAttribute('class', 'hover-label')
+    t.setAttribute('visibility', 'hidden')
+    hoverGroup.appendChild(t)
+  }
+  svg.appendChild(hoverGroup)
 
   container.appendChild(svg)
   return svg
@@ -39,9 +54,11 @@ export function initSVG(container: HTMLElement): SVGSVGElement {
 export function render(svg: SVGSVGElement, state: AppState): void {
   clearLayer(svg, 'board-layer')
   clearLayer(svg, 'wire-layer')
+  clearLayer(svg, 'resistor-layer')
   clearLayer(svg, 'component-layer')
   renderBoardLayer(svg, state)
   renderWireLayer(svg, state)
+  renderResistorLayer(svg, state)
   renderComponentLayer(svg, state)
 }
 
@@ -60,16 +77,16 @@ function renderBoardLayer(svg: SVGSVGElement, state: AppState): void {
     const rect = svgEl('rect')
     rect.setAttribute('x', String(MARGIN_LEFT - 4))
     rect.setAttribute('y', String(y - HOLE_RADIUS - 2))
-    rect.setAttribute('width', String(BOARD_COLS * PITCH + 4))
+    rect.setAttribute('width', String((BOARD_COLS - 1) * PITCH + 8))
     rect.setAttribute('height', String(HOLE_RADIUS * 2 + 4))
     rect.setAttribute('rx', '3')
     rect.setAttribute('class', cls)
     layer.appendChild(rect)
   }
 
-  const topY    = MARGIN_TOP + ROW_Y_UNITS['A'] * PITCH
+  const topY    = MARGIN_TOP + ROW_Y_UNITS['J'] * PITCH
   const topH    = 5 * PITCH
-  const bottomY = MARGIN_TOP + ROW_Y_UNITS['F'] * PITCH
+  const bottomY = MARGIN_TOP + ROW_Y_UNITS['E'] * PITCH
   const bottomH = 5 * PITCH
 
   for (const [y, h, cls] of [
@@ -79,11 +96,22 @@ function renderBoardLayer(svg: SVGSVGElement, state: AppState): void {
     const rect = svgEl('rect')
     rect.setAttribute('x', String(MARGIN_LEFT - 4))
     rect.setAttribute('y', String(y))
-    rect.setAttribute('width', String(BOARD_COLS * PITCH + 4))
+    rect.setAttribute('width', String((BOARD_COLS - 1) * PITCH + 8))
     rect.setAttribute('height', String(h))
     rect.setAttribute('class', cls)
     layer.appendChild(rect)
   }
+
+  // Center trench between F and E rows
+  const trenchCenterY = MARGIN_TOP + ((ROW_Y_UNITS['F'] + ROW_Y_UNITS['E']) / 2) * PITCH
+  const trenchH       = PITCH - 2
+  const trench = svgEl('rect')
+  trench.setAttribute('x',      '0')
+  trench.setAttribute('y',      String(trenchCenterY - trenchH / 2))
+  trench.setAttribute('width',  String(SVG_WIDTH))
+  trench.setAttribute('height', String(trenchH))
+  trench.setAttribute('class',  'board-trench')
+  layer.appendChild(trench)
 
   const railHoleCls: Record<string, string> = {
     'top+':    'power-hole top-plus-hole',
@@ -93,13 +121,15 @@ function renderBoardLayer(svg: SVGSVGElement, state: AppState): void {
   }
   for (const rail of RAIL_NAMES) {
     for (let col = 1; col <= BOARD_COLS; col++) {
+      if (!isRailHole(col)) continue
       const addr = `${rail}:${col}`
       const { x, y } = getHolePosition(addr)
       const circle = svgEl('circle')
       circle.setAttribute('cx', String(x))
       circle.setAttribute('cy', String(y))
       circle.setAttribute('r',  String(HOLE_RADIUS))
-      circle.setAttribute('class', railHoleCls[rail])
+      const railCls = railHoleCls[rail] + (occupiedHoles.has(addr) ? ' occupied' : '')
+      circle.setAttribute('class', railCls)
       circle.dataset.hole = addr
       layer.appendChild(circle)
     }
@@ -120,55 +150,299 @@ function renderBoardLayer(svg: SVGSVGElement, state: AppState): void {
     }
   }
 
+  const lastHoleX       = MARGIN_LEFT + (BOARD_COLS - 1) * PITCH
+  const topRailTop      = MARGIN_TOP  + ROW_Y_UNITS['top-']    * PITCH - HOLE_RADIUS - 2
+  const bottomRailBot   = MARGIN_TOP  + ROW_Y_UNITS['bottom+'] * PITCH + HOLE_RADIUS + 2
+  const stripeX1        = MARGIN_LEFT - 4
+  const stripeX2        = lastHoleX   + 4
+
+  // Decorative stripes: blue outside the − rails, red inside the + rails
+  const topPlusBot    = MARGIN_TOP + ROW_Y_UNITS['top+']    * PITCH + HOLE_RADIUS + 2
+  const bottomMinusTop = MARGIN_TOP + ROW_Y_UNITS['bottom-'] * PITCH - HOLE_RADIUS - 2
+  for (const { y, cls } of [
+    { y: topRailTop    - 4, cls: 'rail-stripe-minus' },  // blue above top−
+    { y: topPlusBot    + 4, cls: 'rail-stripe-plus'  },  // red below top+
+    { y: bottomMinusTop - 4, cls: 'rail-stripe-minus' },  // blue above bottom−
+    { y: bottomRailBot  + 4, cls: 'rail-stripe-plus'  },  // red below bottom+
+  ]) {
+    const line = svgEl('line')
+    line.setAttribute('x1', String(stripeX1)); line.setAttribute('x2', String(stripeX2))
+    line.setAttribute('y1', String(y));        line.setAttribute('y2', String(y))
+    line.setAttribute('class', cls)
+    layer.appendChild(line)
+  }
+
+  // Column labels in the gap between rails and pin rows
+  const colLabelYTop    = MARGIN_TOP + ROW_Y_UNITS['J'] * PITCH - HOLE_RADIUS - 5
+  const colLabelYBottom = MARGIN_TOP + ROW_Y_UNITS['A'] * PITCH + HOLE_RADIUS + 11
+  const rowLabelXLeft   = MARGIN_LEFT - 8
+  const rowLabelXRight  = lastHoleX   + 8
+
   for (let col = 5; col <= BOARD_COLS; col += 5) {
     const x = MARGIN_LEFT + (col - 1) * PITCH
-    const label = svgEl('text')
-    label.setAttribute('x', String(x))
-    label.setAttribute('y', String(MARGIN_TOP - 6))
-    label.setAttribute('text-anchor', 'middle')
-    label.setAttribute('class', 'col-label')
-    label.textContent = String(col)
-    layer.appendChild(label)
+    for (const y of [colLabelYTop, colLabelYBottom]) {
+      const label = svgEl('text')
+      label.setAttribute('x', String(x))
+      label.setAttribute('y', String(y))
+      label.setAttribute('text-anchor', 'middle')
+      label.setAttribute('class', 'col-label')
+      label.textContent = String(col)
+      layer.appendChild(label)
+    }
   }
 
   for (const row of allRows) {
     const { y } = getHolePosition(`${row}1`)
-    const label = svgEl('text')
-    label.setAttribute('x', String(MARGIN_LEFT - 8))
-    label.setAttribute('y', String(y + 3))
-    label.setAttribute('text-anchor', 'end')
-    label.setAttribute('class', 'row-label')
-    label.textContent = row
-    layer.appendChild(label)
+    for (const [x, anchor] of [[rowLabelXLeft, 'end'], [rowLabelXRight, 'start']] as [number, string][]) {
+      const label = svgEl('text')
+      label.setAttribute('x', String(x))
+      label.setAttribute('y', String(y + 3))
+      label.setAttribute('text-anchor', anchor)
+      label.setAttribute('class', 'row-label')
+      label.textContent = row
+      layer.appendChild(label)
+    }
+  }
+
+  const railLabelDefs = [
+    { rail: 'top-',    text: '−', cls: 'rail-label rail-label-minus' },
+    { rail: 'top+',    text: '+', cls: 'rail-label rail-label-plus'  },
+    { rail: 'bottom-', text: '−', cls: 'rail-label rail-label-minus' },
+    { rail: 'bottom+', text: '+', cls: 'rail-label rail-label-plus'  },
+  ]
+  for (const { rail, text, cls } of railLabelDefs) {
+    const { y } = getHolePosition(`${rail}:1`)
+    for (const [x, anchor] of [[rowLabelXLeft, 'end'], [rowLabelXRight, 'start']] as [number, string][]) {
+      const label = svgEl('text')
+      label.setAttribute('x', String(x))
+      label.setAttribute('y', String(y + 3))
+      label.setAttribute('text-anchor', anchor)
+      label.setAttribute('class', cls)
+      label.textContent = text
+      layer.appendChild(label)
+    }
   }
 }
 
 function getOccupiedHoles(state: AppState): Set<string> {
-  const occupied = new Set<string>()
-  for (const placed of state.placedComponents) {
-    if (placed.hidden) continue
-    const def = state.componentLibrary.find(d => d.id === placed.defId)
-    if (!def) continue
-    for (const pin of def.pins) {
-      occupied.add(getComponentPinHole(placed, pin, def))
+  return getAllOccupiedHoles(state)
+}
+
+const WIRE_OVERLAP_OFFSET = 2.5
+const OFFSET_SLOTS = [0, -WIRE_OVERLAP_OFFSET, WIRE_OVERLAP_OFFSET]
+
+function computeWireYOffsets(wires: Wire[]): Map<string, number> {
+  type RowWire = { id: string; row: string; minCol: number; maxCol: number }
+  const rowWires: RowWire[] = []
+
+  for (const wire of wires) {
+    if (wire.from.includes(':') || wire.to.includes(':')) continue
+    const rowF = wire.from[0], colF = parseInt(wire.from.slice(1))
+    const rowT = wire.to[0],   colT = parseInt(wire.to.slice(1))
+    if (rowF !== rowT) continue
+    rowWires.push({ id: wire.id, row: rowF, minCol: Math.min(colF, colT), maxCol: Math.max(colF, colT) })
+  }
+
+  const byRow = new Map<string, RowWire[]>()
+  for (const rw of rowWires) {
+    if (!byRow.has(rw.row)) byRow.set(rw.row, [])
+    byRow.get(rw.row)!.push(rw)
+  }
+
+  const offsets = new Map<string, number>()
+  const insertionOrder = new Map(wires.map((w, i) => [w.id, i]))
+  const overlaps = (a: RowWire, b: RowWire) => a.minCol < b.maxCol && b.minCol < a.maxCol
+
+  for (const rowList of byRow.values()) {
+    // Process in insertion order so earlier-drawn wires get lower-indexed slots
+    const sorted = [...rowList].sort((a, b) => (insertionOrder.get(a.id) ?? 0) - (insertionOrder.get(b.id) ?? 0))
+
+    for (const wire of sorted) {
+      const hasAnyOverlap = rowList.some(o => o.id !== wire.id && overlaps(wire, o))
+      if (!hasAnyOverlap) continue
+
+      // Collect slots already taken by direct overlapping neighbours
+      const taken = new Set<number>()
+      for (const other of rowList) {
+        if (other.id !== wire.id && overlaps(wire, other) && offsets.has(other.id)) {
+          taken.add(offsets.get(other.id)!)
+        }
+      }
+
+      // Assign the first free slot
+      offsets.set(wire.id, OFFSET_SLOTS.find(s => !taken.has(s)) ?? 0)
     }
   }
-  return occupied
+
+  return offsets
+}
+
+function trespassesThrough(from: string, to: string, hole: string): boolean {
+  const h = getHolePosition(hole)
+  const f = getHolePosition(from)
+  const t = getHolePosition(to)
+  const dx = t.x - f.x, dy = t.y - f.y
+  const len2 = dx * dx + dy * dy
+  if (len2 < 1) return false
+  const param = ((h.x - f.x) * dx + (h.y - f.y) * dy) / len2
+  if (param <= 0.01 || param >= 0.99) return false
+  const px = f.x + param * dx, py = f.y + param * dy
+  return (h.x - px) ** 2 + (h.y - py) ** 2 < 0.25
+}
+
+function computeWireRenderOrder(wires: Wire[]): Wire[] {
+  const n = wires.length
+  if (n < 2) return [...wires]
+
+  // adj[i] = wires that must render after wire i
+  // (because they trespass through wire i's endpoint)
+  const adj: number[][] = Array.from({ length: n }, () => [])
+  const inDegree = new Array(n).fill(0)
+
+  for (let i = 0; i < n; i++) {
+    for (let j = 0; j < n; j++) {
+      if (i === j) continue
+      if (trespassesThrough(wires[j].from, wires[j].to, wires[i].from) ||
+          trespassesThrough(wires[j].from, wires[j].to, wires[i].to)) {
+        adj[i].push(j)
+        inDegree[j]++
+      }
+    }
+  }
+
+  const queue: number[] = []
+  for (let i = 0; i < n; i++) if (inDegree[i] === 0) queue.push(i)
+
+  const result: number[] = []
+  while (queue.length) {
+    const i = queue.shift()!
+    result.push(i)
+    for (const j of adj[i]) if (--inDegree[j] === 0) queue.push(j)
+  }
+
+  // Append any nodes left in a cycle (keep original order)
+  for (let i = 0; i < n; i++) if (inDegree[i] > 0) result.push(i)
+
+  return result.map(i => wires[i])
 }
 
 function renderWireLayer(svg: SVGSVGElement, state: AppState): void {
-  const layer = getLayer(svg, 'wire-layer')
-  for (const wire of state.wires) {
+  const layer    = getLayer(svg, 'wire-layer')
+  const yOffsets = computeWireYOffsets(state.wires)
+
+  function wireCoords(wire: { from: string; to: string }, yOff: number) {
     const from = getHolePosition(wire.from)
     const to   = getHolePosition(wire.to)
+    return { x1: from.x, y1: from.y + yOff, x2: to.x, y2: to.y + yOff }
+  }
+
+  // Render wire + border as a pair so each wire's border overlays previous wires.
+  // Order: pinned wires first, wires that trespass through their endpoints last.
+  for (const wire of computeWireRenderOrder(state.wires)) {
+    const yOff       = yOffsets.get(wire.id) ?? 0
+    const { x1, y1, x2, y2 } = wireCoords(wire, yOff)
+    const isSelected = wire.id === state.selectedId
+
     const line = svgEl('line')
-    line.setAttribute('x1', String(from.x))
-    line.setAttribute('y1', String(from.y))
-    line.setAttribute('x2', String(to.x))
-    line.setAttribute('y2', String(to.y))
-    line.setAttribute('class', wire.id === state.selectedId ? 'wire selected' : 'wire')
+    line.setAttribute('x1', String(x1)); line.setAttribute('y1', String(y1))
+    line.setAttribute('x2', String(x2)); line.setAttribute('y2', String(y2))
+    line.setAttribute('class', isSelected ? 'wire selected' : 'wire')
+    line.style.stroke = isSelected ? 'var(--amber)' : wireColor(wire.from, wire.to, state.jumperLibrary)
     line.dataset.wireId = wire.id
+    const border = svgEl('line')
+    border.setAttribute('x1', String(x1)); border.setAttribute('y1', String(y1))
+    border.setAttribute('x2', String(x2)); border.setAttribute('y2', String(y2))
+    border.setAttribute('class', 'wire-border')
+    layer.appendChild(border)
+
     layer.appendChild(line)
+  }
+}
+
+function buildResistorSVG(
+  from: { x: number; y: number },
+  to:   { x: number; y: number },
+  value: string,
+  selected: boolean,
+  preview = false,
+): SVGGElement[] {
+  const cx = (from.x + to.x) / 2
+  const cy = (from.y + to.y) / 2
+  const dx = to.x - from.x
+  const dy = to.y - from.y
+  const totalLen = Math.sqrt(dx * dx + dy * dy)
+  if (totalLen < 2) return []
+
+  const angleDeg = Math.atan2(dy, dx) * 180 / Math.PI
+  const bodyW    = Math.min(totalLen * 0.55, 44)
+  const bodyH    = 10
+  const halfLen  = totalLen / 2
+
+  const g = svgEl('g')
+  if (preview) g.setAttribute('opacity', '0.55')
+
+  const lead = svgEl('line')
+  lead.setAttribute('x1', String(-halfLen))
+  lead.setAttribute('y1', '0')
+  lead.setAttribute('x2', String(halfLen))
+  lead.setAttribute('y2', '0')
+  lead.setAttribute('class', selected ? 'resistor-lead selected' : 'resistor-lead')
+  g.appendChild(lead)
+
+  const body = svgEl('rect')
+  body.setAttribute('x', String(-bodyW / 2))
+  body.setAttribute('y', String(-bodyH / 2))
+  body.setAttribute('width',  String(bodyW))
+  body.setAttribute('height', String(bodyH))
+  body.setAttribute('rx', '2')
+  body.setAttribute('class', selected ? 'resistor-body selected' : 'resistor-body')
+  g.appendChild(body)
+
+  g.setAttribute('transform', `translate(${cx},${cy}) rotate(${angleDeg})`)
+
+  // Value text rendered separately (outside the rotated group) so it stays upright
+  const elements: SVGGElement[] = [g]
+  if (bodyW >= 20) {
+    const txt = svgEl('text') as unknown as SVGTextElement
+    txt.setAttribute('x', String(cx))
+    txt.setAttribute('y', String(cy))
+    txt.setAttribute('text-anchor', 'middle')
+    txt.setAttribute('dominant-baseline', 'middle')
+    txt.setAttribute('class', 'resistor-value')
+    txt.setAttribute('pointer-events', 'none')
+    if (preview) (txt as SVGElement).setAttribute('opacity', '0.55')
+    txt.textContent = value
+    elements.push(txt as unknown as SVGGElement)
+  }
+  return elements
+}
+
+function renderResistorLayer(svg: SVGSVGElement, state: AppState): void {
+  const layer = getLayer(svg, 'resistor-layer')
+  for (const r of state.resistors) {
+    const from     = getHolePosition(r.from)
+    const to       = getHolePosition(r.to)
+    const selected = r.id === state.selectedId
+    for (const el of buildResistorSVG(from, to, r.value, selected)) {
+      if (!el.dataset) (el as SVGElement).setAttribute('data-resistor-id', r.id)
+      else             el.dataset.resistorId = r.id
+      layer.appendChild(el)
+    }
+  }
+}
+
+export function renderPreviewResistor(
+  svg: SVGSVGElement,
+  fromHole: string,
+  toX: number,
+  toY: number,
+  value: string,
+): void {
+  clearLayer(svg, 'preview-layer')
+  const layer = getLayer(svg, 'preview-layer')
+  const from  = getHolePosition(fromHole)
+  for (const el of buildResistorSVG(from, { x: toX, y: toY }, value, false, true)) {
+    layer.appendChild(el)
   }
 }
 
@@ -231,6 +505,7 @@ function renderPlacedComponent(
   g.appendChild(nameLabel)
 
   for (const pin of def.pins) {
+    if (pin.name === '*') continue
     const addr       = getComponentPinHole(placed, pin, def)
     const { x: px, y: py } = getHolePosition(addr)
 
@@ -334,15 +609,21 @@ export function renderGhostComponent(svg: SVGSVGElement, def: ComponentDef, anch
   layer.appendChild(rect)
 }
 
-export function renderPreviewWire(svg: SVGSVGElement, fromHole: string, toX: number, toY: number): void {
+export function renderPreviewWire(
+  svg: SVGSVGElement, fromHole: string, toX: number, toY: number,
+  jumperLibrary: AppState['jumperLibrary'],
+): void {
   clearLayer(svg, 'preview-layer')
-  const layer  = getLayer(svg, 'preview-layer')
-  const from   = getHolePosition(fromHole)
-  const line   = svgEl('line')
+  const layer     = getLayer(svg, 'preview-layer')
+  const from      = getHolePosition(fromHole)
+  const toHole    = snapToHole(toX, toY)
+  const color     = toHole ? wireColor(fromHole, toHole, jumperLibrary) : COPPER_COLOR
+  const line      = svgEl('line')
   line.setAttribute('x1', String(from.x))
   line.setAttribute('y1', String(from.y))
   line.setAttribute('x2', String(toX))
   line.setAttribute('y2', String(toY))
   line.setAttribute('class', 'preview-wire')
+  line.style.stroke = color
   layer.appendChild(line)
 }

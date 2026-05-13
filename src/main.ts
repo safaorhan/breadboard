@@ -1,11 +1,13 @@
-import { state, onStateChange, addComponentDef, updateComponentDef, removeComponentDef, setComponentColor, toggleComponentLock, toggleComponentVisibility, rotateComponent, removeComponent, selectItem } from './state'
+import { state, onStateChange, initDB, addComponentDef, updateComponentDef, removeComponentDef, setComponentColor, toggleComponentLock, toggleComponentVisibility, rotateComponent, removeComponent, removeWire, removeResistor, updateResistorValue, addJumperDef, removeJumperDef, updateJumperDef, setActiveJumperSet, selectItem } from './state'
+import { matchJumper, COPPER_COLOR } from './jumpers'
 import { COMPONENT_COLORS, getColor } from './colors'
 import { initSVG, render, renderSidebar } from './render'
-import { renderWiresList } from './layers'
-import { initDrag, startPlacement, cancelCurrentDrag, deleteSelected } from './drag'
+import { renderWiresList, renderResistorsList } from './layers'
+import { initDrag, startPlacement, cancelCurrentDrag, deleteSelected, setResistorMode, setDefaultResistorValue } from './drag'
 import { renderTable } from './table'
+import type { Net } from './nets'
 import { renderLayersPanel } from './layers'
-import { MARGIN_LEFT, MARGIN_TOP, PITCH, HOLE_RADIUS, ROW_Y_UNITS, SVG_WIDTH, SVG_HEIGHT } from './board'
+import { MARGIN_LEFT, MARGIN_TOP, PITCH, HOLE_RADIUS, ROW_Y_UNITS, SVG_WIDTH, SVG_HEIGHT, BOARD_COLS, getHolePosition } from './board'
 
 const canvasContainer = document.getElementById('canvas-container')  as HTMLDivElement
 const canvasScrollArea= document.getElementById('canvas-scroll-area') as HTMLDivElement
@@ -13,8 +15,19 @@ const tableInner      = document.getElementById('table-inner')       as HTMLDivE
 const sidebarList      = document.getElementById('component-list')    as HTMLUListElement
 const layersList       = document.getElementById('layers-list')       as HTMLUListElement
 const wiresList        = document.getElementById('wires-list')        as HTMLUListElement
+const resistorsList    = document.getElementById('resistors-list')    as HTMLUListElement
 const componentsLabel  = document.getElementById('components-label')  as HTMLElement
 const wiresLabel       = document.getElementById('wires-label')       as HTMLElement
+const resistorsLabel   = document.getElementById('resistors-label')   as HTMLElement
+
+function makeCollapsible(label: HTMLElement, content: HTMLElement): void {
+  label.classList.add('collapsible')
+  label.addEventListener('click', () => {
+    const closing = content.style.display !== 'none'
+    content.style.display = closing ? 'none' : ''
+    label.classList.toggle('collapsed', closing)
+  })
+}
 const ctxMenu         = document.getElementById('context-menu')      as HTMLDivElement
 const ctxRotateItem   = document.getElementById('ctx-rotate')        as HTMLLIElement
 const ctxLockItem     = document.getElementById('ctx-toggle-lock')   as HTMLLIElement
@@ -25,6 +38,86 @@ const zoomLabel       = document.getElementById('zoom-label')        as HTMLSpan
 
 const svg = initSVG(canvasContainer)
 initDrag(svg)
+
+// ── Hover labels ─────────────────────────────────────────────────────────
+{
+  const hoverColTop    = svg.querySelector('#hover-col-top')    as SVGTextElement
+  const hoverColBottom = svg.querySelector('#hover-col-bottom') as SVGTextElement
+  const hoverRowLeft   = svg.querySelector('#hover-row-left')   as SVGTextElement
+  const hoverRowRight  = svg.querySelector('#hover-row-right')  as SVGTextElement
+  const hoverEls       = [hoverColTop, hoverColBottom, hoverRowLeft, hoverRowRight]
+
+  const colYTop       = MARGIN_TOP + ROW_Y_UNITS['J'] * PITCH - HOLE_RADIUS - 5
+  const colYBottom    = MARGIN_TOP + ROW_Y_UNITS['A'] * PITCH + HOLE_RADIUS + 11
+  const rowXLeft      = MARGIN_LEFT   - 8
+  const rowXRight     = MARGIN_LEFT   + (BOARD_COLS - 1) * PITCH + 8
+
+  function showHoverLabels(hole: string): void {
+    let col: number, rowText: string, rowY: number
+    if (hole.includes(':')) {
+      const colon = hole.lastIndexOf(':')
+      const rail  = hole.slice(0, colon)
+      col     = parseInt(hole.slice(colon + 1))
+      rowText = rail.endsWith('+') ? '+' : '−'
+      rowY    = MARGIN_TOP + ROW_Y_UNITS[rail] * PITCH
+    } else {
+      rowText = hole[0]
+      col     = parseInt(hole.slice(1))
+      rowY    = MARGIN_TOP + ROW_Y_UNITS[rowText] * PITCH
+    }
+    const x = MARGIN_LEFT + (col - 1) * PITCH
+
+    hoverColTop.setAttribute('x', String(x)); hoverColTop.setAttribute('y', String(colYTop))
+    hoverColTop.setAttribute('text-anchor', 'middle'); hoverColTop.textContent = String(col)
+    hoverColTop.setAttribute('visibility', 'visible')
+
+    hoverColBottom.setAttribute('x', String(x)); hoverColBottom.setAttribute('y', String(colYBottom))
+    hoverColBottom.setAttribute('text-anchor', 'middle'); hoverColBottom.textContent = String(col)
+    hoverColBottom.setAttribute('visibility', 'visible')
+
+    hoverRowLeft.setAttribute('x', String(rowXLeft)); hoverRowLeft.setAttribute('y', String(rowY + 3))
+    hoverRowLeft.setAttribute('text-anchor', 'end'); hoverRowLeft.textContent = rowText
+    hoverRowLeft.setAttribute('visibility', 'visible')
+
+    hoverRowRight.setAttribute('x', String(rowXRight)); hoverRowRight.setAttribute('y', String(rowY + 3))
+    hoverRowRight.setAttribute('text-anchor', 'start'); hoverRowRight.textContent = rowText
+    hoverRowRight.setAttribute('visibility', 'visible')
+  }
+
+  function hideHoverLabels(): void {
+    hoverEls.forEach(el => el.setAttribute('visibility', 'hidden'))
+  }
+
+  svg.addEventListener('mouseover', (e) => {
+    const hole = (e.target as SVGElement).dataset?.hole
+    if (hole) showHoverLabels(hole)
+    else hideHoverLabels()
+  })
+  svg.addEventListener('mouseleave', hideHoverLabels)
+}
+
+// ── Resistor tool ────────────────────────────────────────────────────────
+const resistorModeBtn   = document.getElementById('resistor-mode-btn')   as HTMLButtonElement
+const resistorValueInput = document.getElementById('resistor-value-input') as HTMLInputElement
+
+let resistorModeActive = false
+
+function setResistorModeUI(active: boolean): void {
+  resistorModeActive = active
+  setResistorMode(active)
+  resistorModeBtn.classList.toggle('active', active)
+}
+
+resistorModeBtn.addEventListener('click', () => setResistorModeUI(!resistorModeActive))
+
+resistorValueInput.addEventListener('input', () => {
+  const val = resistorValueInput.value.trim()
+  if (val) setDefaultResistorValue(val)
+  // If a resistor is currently selected, update it live
+  if (state.selectedType === 'resistor' && state.selectedId) {
+    updateResistorValue(state.selectedId, val || '?')
+  }
+})
 
 // ── Zoom ────────────────────────────────────────────────────────────────
 let zoomLevel = 1
@@ -316,8 +409,264 @@ function hideColorPicker(): void {
   colorPicker.classList.remove('visible')
 }
 
+// ── Jumper library ───────────────────────────────────────────────────────────
+const jumperLibraryToggle  = document.getElementById('jumper-library-toggle')  as HTMLButtonElement
+const jumperLibrarySection = document.getElementById('jumper-library-section') as HTMLDivElement
+const jumperListEl         = document.getElementById('jumper-list')             as HTMLUListElement
+const jumperPaletteEl      = document.getElementById('jumper-palette')          as HTMLDivElement
+const jumperColorInput     = document.getElementById('jumper-color')            as HTMLInputElement
+const jumperPitchInput     = document.getElementById('jumper-pitch')            as HTMLInputElement
+
+// ── Build jumper colour palette ───────────────────────────────────────────
+const JUMPER_PALETTE = [
+  '#e53935','#fb8c00','#fdd835','#43a047',
+  '#1e88e5','#00acc1','#8e24aa','#e91e63',
+  '#212121','#757575','#f5f5f5','#795548',
+]
+
+let activeJumperColor = JUMPER_PALETTE[0]
+
+function selectPaletteSwatch(color: string, el: HTMLElement): void {
+  activeJumperColor      = color
+  jumperColorInput.value = color
+  jumperPaletteEl.querySelectorAll<HTMLElement>('.j-swatch').forEach(s => s.classList.remove('selected'))
+  el.classList.add('selected')
+}
+
+JUMPER_PALETTE.forEach(color => {
+  const btn = document.createElement('button')
+  btn.type             = 'button'
+  btn.className        = 'j-swatch'
+  btn.style.background = color
+  btn.title            = color
+  if (color === activeJumperColor) btn.classList.add('selected')
+  btn.addEventListener('click', () => selectPaletteSwatch(color, btn))
+  jumperPaletteEl.appendChild(btn)
+})
+
+const customSwatch = document.createElement('button')
+customSwatch.type      = 'button'
+customSwatch.className = 'j-swatch j-swatch-custom'
+customSwatch.title     = 'Custom colour'
+customSwatch.addEventListener('click', () => jumperColorInput.click())
+jumperPaletteEl.appendChild(customSwatch)
+
+jumperColorInput.addEventListener('input', () => {
+  activeJumperColor              = jumperColorInput.value
+  customSwatch.style.background  = jumperColorInput.value
+  jumperPaletteEl.querySelectorAll<HTMLElement>('.j-swatch').forEach(s => s.classList.remove('selected'))
+  customSwatch.classList.add('selected')
+})
+const jumperSetSelect      = document.getElementById('jumper-set-select')        as HTMLSelectElement
+const jumperForm           = document.getElementById('add-jumper-form')         as HTMLFormElement
+const jumperSubmitBtn      = document.getElementById('jumper-submit-btn')        as HTMLButtonElement
+const jumperCancelBtn      = document.getElementById('jumper-cancel-btn')        as HTMLButtonElement
+const bomLabel             = document.getElementById('bom-label')               as HTMLElement
+const bomInner             = document.getElementById('bom-inner')               as HTMLDivElement
+
+let editingJumperPitch: number | null = null
+
+function enterJumperEdit(pitch: number): void {
+  const j = state.jumperLibrary.find(j => j.pitch === pitch)
+  if (!j) return
+  editingJumperPitch = pitch
+  jumperPitchInput.value = String(j.pitch)
+  // select the matching palette swatch or fall back to custom
+  const paletteMatch = JUMPER_PALETTE.indexOf(j.color)
+  jumperPaletteEl.querySelectorAll<HTMLElement>('.j-swatch').forEach(s => s.classList.remove('selected'))
+  if (paletteMatch !== -1) {
+    const swatches = jumperPaletteEl.querySelectorAll<HTMLElement>('.j-swatch:not(.j-swatch-custom)')
+    swatches[paletteMatch]?.classList.add('selected')
+  } else {
+    customSwatch.style.background = j.color
+    customSwatch.classList.add('selected')
+    jumperColorInput.value = j.color
+  }
+  activeJumperColor           = j.color
+  jumperSubmitBtn.textContent = 'Save changes'
+  jumperCancelBtn.style.display = ''
+  showJumperSection()
+  jumperPitchInput.focus()
+  renderJumperList()
+}
+
+function exitJumperEdit(): void {
+  editingJumperPitch = null
+  jumperPitchInput.value = ''
+  jumperSubmitBtn.textContent   = 'Add jumper'
+  jumperCancelBtn.style.display = 'none'
+  renderJumperList()
+}
+
+jumperCancelBtn.addEventListener('click', exitJumperEdit)
+
+function showJumperSection(): void {
+  jumperLibrarySection.style.display = ''
+  jumperLibraryToggle.textContent    = '× Jumper Library'
+  jumperLibraryToggle.classList.add('open')
+}
+function hideJumperSection(): void {
+  jumperLibrarySection.style.display = 'none'
+  jumperLibraryToggle.textContent    = '+ Jumper Library'
+  jumperLibraryToggle.classList.remove('open')
+}
+
+jumperLibraryToggle.addEventListener('click', () => {
+  jumperLibrarySection.style.display === 'none' ? showJumperSection() : hideJumperSection()
+})
+
+jumperForm.addEventListener('submit', (e) => {
+  e.preventDefault()
+  const pitch = parseFloat(jumperPitchInput.value)
+  if (isNaN(pitch) || pitch <= 0) return
+  if (editingJumperPitch !== null) {
+    updateJumperDef(editingJumperPitch, { color: activeJumperColor, pitch })
+    exitJumperEdit()
+  } else {
+    addJumperDef(activeJumperColor, pitch)
+    jumperPitchInput.value = ''
+  }
+})
+
+function renderJumperSetSelector(): void {
+  jumperSetSelect.innerHTML = '<option value="">— none —</option>'
+  for (const set of state.jumperSets) {
+    const opt = document.createElement('option')
+    opt.value       = set.id
+    opt.textContent = set.name
+    jumperSetSelect.appendChild(opt)
+  }
+  jumperSetSelect.value = state.activeJumperSetId ?? ''
+}
+
+jumperSetSelect.addEventListener('change', () => {
+  setActiveJumperSet(jumperSetSelect.value || null)
+})
+
+function renderJumperList(): void {
+  jumperListEl.innerHTML = ''
+  if (state.jumperLibrary.length === 0) {
+    const hint = document.createElement('li')
+    hint.className   = 'comp-item-hint'
+    hint.textContent = 'No jumpers defined'
+    jumperListEl.appendChild(hint)
+    return
+  }
+  for (const j of state.jumperLibrary) {
+    const li = document.createElement('li')
+    li.className = j.pitch === editingJumperPitch ? 'jumper-item editing' : 'jumper-item'
+
+    const dot = document.createElement('span')
+    dot.className        = 'jumper-color-dot'
+    dot.style.background = j.color
+
+    const info = document.createElement('span')
+    info.className   = 'jumper-info'
+    info.textContent = `${j.pitch}p`
+
+    const edit = document.createElement('button')
+    edit.className = 'jumper-edit-btn'
+    edit.title     = 'Edit'
+    edit.innerHTML = DD_PENCIL
+    edit.addEventListener('click', () => enterJumperEdit(j.pitch))
+
+    const del = document.createElement('button')
+    del.className   = 'comp-del-btn'
+    del.title       = 'Remove'
+    del.textContent = '×'
+    del.addEventListener('click', () => {
+      if (editingJumperPitch === j.pitch) exitJumperEdit()
+      removeJumperDef(j.pitch)
+    })
+
+    li.appendChild(dot)
+    li.appendChild(info)
+    li.appendChild(edit)
+    li.appendChild(del)
+    jumperListEl.appendChild(li)
+  }
+}
+
+function renderBoM(): void {
+  if (!state.wires.length || !state.jumperLibrary.length) {
+    bomLabel.style.display = 'none'
+    bomInner.innerHTML     = ''
+    return
+  }
+  bomLabel.style.display = ''
+
+  const wireLen = (from: string, to: string) => {
+    const a = getHolePosition(from), b = getHolePosition(to)
+    return Math.sqrt((b.x - a.x) ** 2 + (b.y - a.y) ** 2) / PITCH
+  }
+
+  const counts = new Map<string, { name: string; color: string; count: number; len: number }>()
+  for (const wire of state.wires) {
+    const m = matchJumper(wire.from, wire.to, state.jumperLibrary)
+    let key: string, name: string, color: string, len: number
+    if (m) {
+      key = String(m.pitch); name = `${m.pitch}p`; color = m.color; len = m.pitch
+    } else {
+      len  = wireLen(wire.from, wire.to)
+      key  = `__custom__${Math.round(len * 10)}`
+      name = `${+len.toFixed(1)}p*`
+      color = COPPER_COLOR
+    }
+    if (!counts.has(key)) counts.set(key, { name, color, count: 0, len })
+    counts.get(key)!.count++
+  }
+
+  bomInner.innerHTML = ''
+  const ul = document.createElement('ul')
+  ul.className = 'bom-list'
+  for (const item of [...counts.values()].sort((a, b) => a.len - b.len)) {
+    const li = document.createElement('li')
+    li.className = 'bom-item'
+
+    const dot = document.createElement('span')
+    dot.className        = 'bom-color-dot'
+    dot.style.background = item.color
+
+    const name = document.createElement('span')
+    name.className   = 'bom-name'
+    name.textContent = item.name
+
+    const count = document.createElement('span')
+    count.className   = 'bom-count'
+    count.textContent = `×${item.count}`
+
+    li.appendChild(dot); li.appendChild(name); li.appendChild(count)
+    ul.appendChild(li)
+  }
+  bomInner.appendChild(ul)
+}
+
 const recentsLabel = document.getElementById('recents-label')                    as HTMLElement
 const libraryLabel = document.querySelector('.panel-label[data-label="library"]') as HTMLElement
+
+let lastNets: Net[] = []
+
+// Highlight all wires in a net when hovering a connections table row
+let tableHoverIds: string[] = []
+
+function setTableHover(netRoot: string | null): void {
+  for (const id of tableHoverIds)
+    svg.querySelector(`[data-wire-id="${id}"]`)?.classList.remove('panel-hover')
+  tableHoverIds = []
+  if (!netRoot) return
+  const net = lastNets.find(n => n.root === netRoot)
+  if (!net) return
+  for (const id of net.wireIds) {
+    const el = svg.querySelector(`[data-wire-id="${id}"]`)
+    if (el) { el.classList.add('panel-hover'); tableHoverIds.push(id) }
+  }
+}
+
+tableInner.addEventListener('mouseover', (e) => {
+  const row = (e.target as HTMLElement).closest('tr') as HTMLElement | null
+  setTableHover(row?.dataset.netRoot ?? null)
+})
+tableInner.addEventListener('mouseleave', () => setTableHover(null))
 
 function update(): void {
   render(svg, state)
@@ -328,11 +677,23 @@ function update(): void {
     recentsLabel.textContent   = `Recents (${recentIds.length})`
   }
   if (libraryLabel) libraryLabel.textContent = `Library (${state.componentLibrary.length})`
-  componentsLabel.textContent = `Components (${state.placedComponents.length})`
-  wiresLabel.textContent      = `Wires (${state.wires.length})`
-  renderTable(tableInner, state)
+  componentsLabel.textContent  = `Components (${state.placedComponents.length})`
+  wiresLabel.textContent       = `Wires (${state.wires.length})`
+  resistorsLabel.textContent   = `Resistors (${state.resistors.length})`
+  lastNets = renderTable(tableInner, state)
   renderLayersPanel(layersList, state.placedComponents, state.componentLibrary, state.selectedId)
   renderWiresList(wiresList, state)
+  renderResistorsList(resistorsList, state)
+  renderJumperSetSelector()
+  renderJumperList()
+  renderBoM()
+  // Sync value input to selected resistor
+  if (state.selectedType === 'resistor' && state.selectedId) {
+    const r = state.resistors.find(r => r.id === state.selectedId)
+    if (r && document.activeElement !== resistorValueInput) {
+      resistorValueInput.value = r.value
+    }
+  }
 }
 
 function fitToScreen(): void {
@@ -343,9 +704,16 @@ function fitToScreen(): void {
   setZoom(Math.min(scaleX, scaleY))
 }
 
-onStateChange(update)
-update()
-requestAnimationFrame(() => fitToScreen())
+initDB().then(() => {
+  onStateChange(update)
+  update()
+  requestAnimationFrame(() => fitToScreen())
+})
+
+makeCollapsible(componentsLabel, layersList)
+makeCollapsible(wiresLabel,      wiresList)
+makeCollapsible(resistorsLabel,  resistorsList)
+makeCollapsible(bomLabel,        bomInner)
 
 // --- Context menu ---
 
@@ -436,6 +804,25 @@ layersList.addEventListener('click', (e) => {
 
 // --- Wires list ---
 
+let panelHoveredWireId: string | null = null
+
+function setPanelWireHover(wireId: string | null): void {
+  if (panelHoveredWireId) {
+    svg.querySelector(`[data-wire-id="${panelHoveredWireId}"]`)?.classList.remove('panel-hover')
+  }
+  panelHoveredWireId = wireId
+  if (wireId) {
+    svg.querySelector(`[data-wire-id="${wireId}"]`)?.classList.add('panel-hover')
+  }
+}
+
+wiresList.addEventListener('mouseover', (e) => {
+  const li = (e.target as HTMLElement).closest('.wire-item') as HTMLElement | null
+  const id = li?.dataset.wireId ?? null
+  if (id !== panelHoveredWireId) setPanelWireHover(id)
+})
+wiresList.addEventListener('mouseleave', () => setPanelWireHover(null))
+
 wiresList.addEventListener('click', (e) => {
   const target = e.target as HTMLElement
   const li     = target.closest('.wire-item') as HTMLElement | null
@@ -444,6 +831,18 @@ wiresList.addEventListener('click', (e) => {
   e.stopPropagation()
   if (target.closest('[data-action="delete-wire"]')) removeWire(wireId)
   else selectItem(wireId, 'wire')
+})
+
+// --- Resistors list ---
+
+resistorsList.addEventListener('click', (e) => {
+  const target = e.target as HTMLElement
+  const li = target.closest('.wire-item') as HTMLElement | null
+  if (!li) return
+  const resistorId = li.dataset.resistorId!
+  e.stopPropagation()
+  if (target.closest('[data-action="delete-resistor"]')) removeResistor(resistorId)
+  else selectItem(resistorId, 'resistor')
 })
 
 // --- Sidebar + edit mode ---
@@ -478,7 +877,6 @@ function enterEditMode(defId: string): void {
   editingDefId = defId
 
   nameInput.value    = def.name
-  colSpanInput.value = String(def.colSpan)
   rowSpanInput.value = String(def.rowSpan)
 
   const topPins    = def.pins.filter(p => p.row === 'top').sort((a, b) => a.col - b.col).map(p => p.name)
@@ -501,7 +899,6 @@ function enterEditMode(defId: string): void {
 function exitEditMode(): void {
   editingDefId = null
   nameInput.value    = ''
-  colSpanInput.value = ''
   rowSpanInput.value = ''
   pinsInput.value    = ''
   hideFormSection()
@@ -556,29 +953,28 @@ document.addEventListener('keydown', (e) => {
 
 const form         = document.getElementById('add-component-form') as HTMLFormElement
 const nameInput    = document.getElementById('comp-name')          as HTMLInputElement
-const colSpanInput = document.getElementById('comp-colspan')       as HTMLInputElement
 const rowSpanInput = document.getElementById('comp-rowspan')       as HTMLInputElement
 const pinsInput    = document.getElementById('comp-pins')          as HTMLTextAreaElement
 
 form.addEventListener('submit', (e) => {
   e.preventDefault()
 
-  const name     = nameInput.value.trim()
-  const colSpan  = parseInt(colSpanInput.value, 10)
-  const rowSpan  = parseInt(rowSpanInput.value, 10)
-  const pinNames = pinsInput.value
+  const name    = nameInput.value.trim()
+  const rowSpan = parseInt(rowSpanInput.value, 10)
+  if (!name || isNaN(rowSpan) || rowSpan < 1) return
+
+  const lines = pinsInput.value
     .split('\n')
-    .flatMap(line => line.trim().split(/\s+/))
-    .filter(s => s.length > 0)
+    .map(line => line.trim().split(/\s+/).filter(s => s.length > 0))
+    .filter(l => l.length > 0)
 
-  if (!name || isNaN(colSpan) || colSpan < 1 || isNaN(rowSpan) || rowSpan < 1) return
-
-  const topCount    = Math.ceil(pinNames.length / 2)
-  const bottomCount = Math.floor(pinNames.length / 2)
+  const topPins    = lines[0] ?? []
+  const bottomPins = lines[1] ?? []
+  const colSpan    = Math.max(topPins.length, bottomPins.length, 1)
 
   const pins = [
-    ...pinNames.slice(0, topCount).map((pname, i) => ({ name: pname, col: i, row: 'top'    as const })),
-    ...pinNames.slice(topCount, topCount + bottomCount).map((pname, i) => ({ name: pname, col: i, row: 'bottom' as const })),
+    ...topPins.map((pname, i)    => ({ name: pname, col: i, row: 'top'    as const })),
+    ...bottomPins.map((pname, i) => ({ name: pname, col: i, row: 'bottom' as const })),
   ]
 
   if (editingDefId) {
@@ -587,7 +983,6 @@ form.addEventListener('submit', (e) => {
   } else {
     addComponentDef({ name, colSpan, rowSpan, pins })
     nameInput.value    = ''
-    colSpanInput.value = ''
     rowSpanInput.value = ''
     pinsInput.value    = ''
     hideFormSection()
