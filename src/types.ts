@@ -4,12 +4,22 @@ export interface PinDef {
   row: 'top' | 'bottom'   // top edge or bottom edge of the component
 }
 
+export interface ComponentIllustration {
+  file:    string                                             // SVG filename in lib/components/
+  viewBox: { width: number; height: number }                 // from the SVG's viewBox attribute
+  anchors: [                                                 // two named pins with their SVG centre coords
+    { pin: string; x: number; y: number },
+    { pin: string; x: number; y: number },
+  ]
+}
+
 export interface ComponentDef {
-  id: string
-  name: string
-  colSpan: number    // width in columns
-  rowSpan: number    // height in y-units (same scale as ROW_Y_UNITS)
-  pins: PinDef[]
+  id:           string
+  name:         string
+  colSpan:      number    // width in columns
+  rowSpan:      number    // height in y-units (same scale as ROW_Y_UNITS)
+  pins:         PinDef[]
+  illustration?: ComponentIllustration
 }
 
 export interface PlacedComponent {
@@ -41,21 +51,13 @@ export interface JumperSet {
   jumpers: JumperDef[]
 }
 
-export interface Resistor {
-  id:    string
-  from:  string      // hole address
-  to:    string      // hole address
-  value: string      // e.g. "1K", "470Ω"
-}
-
 export interface AppState {
   placedComponents:  PlacedComponent[]
   wires:             Wire[]
-  resistors:         Resistor[]
   jumperSets:        JumperSet[]        // all available sets (system + user)
   activeJumperSetId: string | null
   jumperLibrary:     JumperDef[]        // jumpers from the active set
   componentLibrary:  ComponentDef[]
   selectedId:        string | null
-  selectedType:      'component' | 'wire' | 'resistor' | null
+  selectedType:      'component' | 'wire' | null
 }

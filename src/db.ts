@@ -1,9 +1,9 @@
-import type { ComponentDef, JumperSet, PlacedComponent, Wire, Resistor } from './types'
+import type { ComponentDef, JumperSet, PlacedComponent, Wire } from './types'
 import { PRESET_LIBRARY, PRESET_JUMPER_LIBRARY } from './components'
 
 const DB_NAME    = 'breadboard'
 const DB_VERSION = 2   // bump only for schema changes (new/removed stores, indexes)
-const SEED_VERSION = 4 // bump whenever lib/components or lib/jumper-sets content changes
+const SEED_VERSION = 6 // bump whenever lib/components or lib/jumper-sets content changes
 
 export interface Project {
   id:                string
@@ -12,7 +12,6 @@ export interface Project {
   updatedAt:         number
   placedComponents:  PlacedComponent[]
   wires:             Wire[]
-  resistors:         Resistor[]
   activeJumperSetId: string | null
 }
 
@@ -171,7 +170,6 @@ async function migrateFromLocalStorage(): Promise<string | null> {
       updatedAt:         now,
       placedComponents:  Array.isArray(data.placedComponents) ? data.placedComponents : [],
       wires:             Array.isArray(data.wires)            ? data.wires            : [],
-      resistors:         Array.isArray(data.resistors)        ? data.resistors        : [],
       activeJumperSetId,
     })
 
@@ -227,7 +225,6 @@ export async function initializeDB(): Promise<DBInitResult> {
         updatedAt:         now,
         placedComponents:  [],
         wires:             [],
-        resistors:         [],
         activeJumperSetId: null,
       })
       activeProjectId = newId

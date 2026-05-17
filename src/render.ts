@@ -4,7 +4,7 @@ import {
   BOARD_COLS, TOP_ROWS, BOTTOM_ROWS, RAIL_NAMES,
   ROW_Y_UNITS, SVG_WIDTH, SVG_HEIGHT, getHolePosition, isRailHole, snapToHole,
 } from './board'
-import { getComponentPinHole, getAllOccupiedHoles } from './components'
+import { getComponentPinHole, getAllOccupiedHoles, getIllustrationUrl } from './components'
 import { getColor } from './colors'
 import { wireColor, COPPER_COLOR } from './jumpers'
 
@@ -28,7 +28,7 @@ export function initSVG(container: HTMLElement): SVGSVGElement {
   svg.setAttribute('viewBox', `0 0 ${SVG_WIDTH} ${SVG_HEIGHT}`)
   svg.setAttribute('fill',    '#faf8f4')
 
-  for (const id of ['board-layer', 'wire-layer', 'resistor-layer', 'component-layer', 'preview-layer']) {
+  for (const id of ['board-layer', 'wire-layer', 'component-layer', 'preview-layer']) {
     const g = svgEl('g')
     g.id = id
     svg.appendChild(g)
@@ -54,11 +54,9 @@ export function initSVG(container: HTMLElement): SVGSVGElement {
 export function render(svg: SVGSVGElement, state: AppState): void {
   clearLayer(svg, 'board-layer')
   clearLayer(svg, 'wire-layer')
-  clearLayer(svg, 'resistor-layer')
   clearLayer(svg, 'component-layer')
   renderBoardLayer(svg, state)
   renderWireLayer(svg, state)
-  renderResistorLayer(svg, state)
   renderComponentLayer(svg, state)
 }
 
@@ -359,90 +357,71 @@ function renderWireLayer(svg: SVGSVGElement, state: AppState): void {
   }
 }
 
-function buildResistorSVG(
-  from: { x: number; y: number },
-  to:   { x: number; y: number },
-  value: string,
-  selected: boolean,
-  preview = false,
-): SVGGElement[] {
-  const cx = (from.x + to.x) / 2
-  const cy = (from.y + to.y) / 2
-  const dx = to.x - from.x
-  const dy = to.y - from.y
-  const totalLen = Math.sqrt(dx * dx + dy * dy)
-  if (totalLen < 2) return []
-
-  const angleDeg = Math.atan2(dy, dx) * 180 / Math.PI
-  const bodyW    = Math.min(totalLen * 0.55, 44)
-  const bodyH    = 10
-  const halfLen  = totalLen / 2
-
-  const g = svgEl('g')
-  if (preview) g.setAttribute('opacity', '0.55')
-
-  const lead = svgEl('line')
-  lead.setAttribute('x1', String(-halfLen))
-  lead.setAttribute('y1', '0')
-  lead.setAttribute('x2', String(halfLen))
-  lead.setAttribute('y2', '0')
-  lead.setAttribute('class', selected ? 'resistor-lead selected' : 'resistor-lead')
-  g.appendChild(lead)
-
-  const body = svgEl('rect')
-  body.setAttribute('x', String(-bodyW / 2))
-  body.setAttribute('y', String(-bodyH / 2))
-  body.setAttribute('width',  String(bodyW))
-  body.setAttribute('height', String(bodyH))
-  body.setAttribute('rx', '2')
-  body.setAttribute('class', selected ? 'resistor-body selected' : 'resistor-body')
-  g.appendChild(body)
-
-  g.setAttribute('transform', `translate(${cx},${cy}) rotate(${angleDeg})`)
-
-  // Value text rendered separately (outside the rotated group) so it stays upright
-  const elements: SVGGElement[] = [g]
-  if (bodyW >= 20) {
-    const txt = svgEl('text') as unknown as SVGTextElement
-    txt.setAttribute('x', String(cx))
-    txt.setAttribute('y', String(cy))
-    txt.setAttribute('text-anchor', 'middle')
-    txt.setAttribute('dominant-baseline', 'middle')
-    txt.setAttribute('class', 'resistor-value')
-    txt.setAttribute('pointer-events', 'none')
-    if (preview) (txt as SVGElement).setAttribute('opacity', '0.55')
-    txt.textContent = value
-    elements.push(txt as unknown as SVGGElement)
-  }
-  return elements
-}
-
-function renderResistorLayer(svg: SVGSVGElement, state: AppState): void {
-  const layer = getLayer(svg, 'resistor-layer')
-  for (const r of state.resistors) {
-    const from     = getHolePosition(r.from)
-    const to       = getHolePosition(r.to)
-    const selected = r.id === state.selectedId
-    for (const el of buildResistorSVG(from, to, r.value, selected)) {
-      if (!el.dataset) (el as SVGElement).setAttribute('data-resistor-id', r.id)
-      else             el.dataset.resistorId = r.id
-      layer.appendChild(el)
-    }
-  }
-}
-
-export function renderPreviewResistor(
-  svg: SVGSVGElement,
-  fromHole: string,
-  toX: number,
-  toY: number,
-  value: string,
+function renderIllustration(
+  g: SVGGElement,
+  placed: PlacedComponent,
+  def: ComponentDef,
+  anchorX: number,
+  anchorY: number,
 ): void {
-  clearLayer(svg, 'preview-layer')
-  const layer = getLayer(svg, 'preview-layer')
-  const from  = getHolePosition(fromHole)
-  for (const el of buildResistorSVG(from, { x: toX, y: toY }, value, false, true)) {
-    layer.appendChild(el)
+  const ill = def.illustration
+  if (!ill) return
+  const url = getIllustrationUrl(ill.file)
+  if (!url) return
+
+  const pinDef0 = def.pins.find(p => p.name === ill.anchors[0].pin)
+  const pinDef1 = def.pins.find(p => p.name === ill.anchors[1].pin)
+  if (!pinDef0 || !pinDef1) return
+
+  // Always use the NON-ROTATED pin positions to compute the transform.
+  // If the component is rotated we apply a 180° rotation afterwards.
+  const canvasX = (col: number) => anchorX + col * PITCH
+  const canvasY = (row: 'top' | 'bottom') => row === 'top' ? anchorY : anchorY + def.rowSpan * PITCH
+
+  const p0 = { x: canvasX(pinDef0.col), y: canvasY(pinDef0.row) }
+  const p1 = { x: canvasX(pinDef1.col), y: canvasY(pinDef1.row) }
+
+  const canvasDist = Math.hypot(p1.x - p0.x, p1.y - p0.y)
+  const svgDist    = Math.hypot(ill.anchors[1].x - ill.anchors[0].x, ill.anchors[1].y - ill.anchors[0].y)
+  const scale      = canvasDist / svgDist
+
+  const imgX = p0.x - ill.anchors[0].x * scale
+  const imgY = p0.y - ill.anchors[0].y * scale
+  const imgW = ill.viewBox.width  * scale
+  const imgH = ill.viewBox.height * scale
+
+  const rotateTransform = (() => {
+    if (!placed.rotated) return null
+    const cx = anchorX + (def.colSpan - 1) * PITCH / 2
+    const cy = anchorY + def.rowSpan * PITCH / 2
+    return `rotate(180,${cx},${cy})`
+  })()
+
+  const img = svgEl('image')
+  img.setAttribute('href',                url)
+  img.setAttribute('x',                   String(imgX))
+  img.setAttribute('y',                   String(imgY))
+  img.setAttribute('width',               String(imgW))
+  img.setAttribute('height',              String(imgH))
+  img.setAttribute('preserveAspectRatio', 'none')
+  img.setAttribute('pointer-events',      'none')
+  img.setAttribute('opacity',             String(placed.locked ? 0.5 : 1))
+  if (rotateTransform) img.setAttribute('transform', rotateTransform)
+  g.appendChild(img)
+
+  if (placed.locked) {
+    const contour = svgEl('rect')
+    contour.setAttribute('x',                String(imgX))
+    contour.setAttribute('y',                String(imgY))
+    contour.setAttribute('width',            String(imgW))
+    contour.setAttribute('height',           String(imgH))
+    contour.setAttribute('fill',             'none')
+    contour.setAttribute('stroke',           'var(--amber)')
+    contour.setAttribute('stroke-width',     '1.5')
+    contour.setAttribute('stroke-dasharray', '4 3')
+    contour.setAttribute('pointer-events',   'none')
+    if (rotateTransform) contour.setAttribute('transform', rotateTransform)
+    g.appendChild(contour)
   }
 }
 
@@ -485,24 +464,36 @@ function renderPlacedComponent(
   body.setAttribute('y', String(y))
   body.setAttribute('width', String(w))
   body.setAttribute('height', String(h))
-  const bodyClass = ['component-body', isSelected ? 'selected' : '', placed.locked ? 'locked' : ''].filter(Boolean).join(' ')
-  body.setAttribute('class', bodyClass)
-  body.setAttribute('pointer-events', placed.locked ? 'none' : 'auto')
-  body.style.fill   = color.fill
-  body.style.stroke = isSelected ? 'var(--accent)' : placed.locked ? 'var(--amber)' : color.stroke
   body.dataset.componentId = placed.id
-  g.appendChild(body)
 
-  const nameLabel = svgEl('text')
-  nameLabel.setAttribute('x', String(x + w / 2))
-  nameLabel.setAttribute('y', String(y + h / 2 + 3))
-  nameLabel.setAttribute('text-anchor', 'middle')
-  nameLabel.setAttribute('class', 'component-label')
-  nameLabel.style.fill = color.stroke
-  nameLabel.textContent = (defCounts.get(placed.defId) ?? 0) > 1
-    ? `${def.name} #${placed.instanceNum}`
-    : def.name
-  g.appendChild(nameLabel)
+  if (def.illustration) {
+    // Invisible rect kept only for pointer-event hit-testing
+    body.setAttribute('fill',           'transparent')
+    body.setAttribute('stroke',         'none')
+    body.setAttribute('pointer-events', placed.locked ? 'none' : 'auto')
+  } else {
+    const bodyClass = ['component-body', isSelected ? 'selected' : '', placed.locked ? 'locked' : ''].filter(Boolean).join(' ')
+    body.setAttribute('class', bodyClass)
+    body.setAttribute('pointer-events', placed.locked ? 'none' : 'auto')
+    body.style.fill   = color.fill
+    body.style.stroke = isSelected ? 'var(--accent)' : placed.locked ? 'var(--amber)' : color.stroke
+  }
+
+  g.appendChild(body)
+  renderIllustration(g, placed, def, anchorX, anchorY)
+
+  if (!def.illustration) {
+    const nameLabel = svgEl('text')
+    nameLabel.setAttribute('x', String(x + w / 2))
+    nameLabel.setAttribute('y', String(y + h / 2 + 3))
+    nameLabel.setAttribute('text-anchor', 'middle')
+    nameLabel.setAttribute('class', 'component-label')
+    nameLabel.style.fill = color.stroke
+    nameLabel.textContent = (defCounts.get(placed.defId) ?? 0) > 1
+      ? `${def.name} #${placed.instanceNum}`
+      : def.name
+    g.appendChild(nameLabel)
+  }
 
   for (const pin of def.pins) {
     if (pin.name === '*') continue
@@ -607,6 +598,13 @@ export function renderGhostComponent(svg: SVGSVGElement, def: ComponentDef, anch
   rect.setAttribute('height', String(h))
   rect.setAttribute('class', 'ghost-body')
   layer.appendChild(rect)
+
+  if (def.illustration) {
+    const ghostPlaced = { rotated: false } as PlacedComponent
+    const g = svgEl('g')
+    renderIllustration(g, ghostPlaced, def, anchorX, anchorY)
+    while (g.firstChild) layer.appendChild(g.firstChild)
+  }
 }
 
 export function renderPreviewWire(

@@ -3,7 +3,11 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <script>if(localStorage.getItem('breadboard-theme')==='light')document.documentElement.dataset.theme='light'</script>
   <title>Breadboard</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="/src/style.css" />
 </head>
 <body>
@@ -25,12 +29,21 @@
 
     <div id="topbar-center">
       <div id="draw-tools">
-        <button id="resistor-mode-btn" class="tool-btn" title="Draw resistor">R</button>
-        <input id="resistor-value-input" type="text" value="1K" placeholder="1K" title="Resistance value" />
       </div>
     </div>
 
     <div id="topbar-right">
+      <button class="zoom-btn" id="theme-toggle" title="Toggle light/dark mode">
+        <!-- shown in dark mode → click to go light -->
+        <svg class="icon-sun" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" style="pointer-events:none">
+          <circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M2 12h2M20 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/>
+        </svg>
+        <!-- shown in light mode → click to go dark -->
+        <svg class="icon-moon" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" style="pointer-events:none">
+          <path d="M21 12.79A9 9 0 1111.21 3 7 7 0 0021 12.79z"/>
+        </svg>
+      </button>
+      <div style="width:1px;height:16px;background:var(--border-2);margin:0 4px;flex-shrink:0"></div>
       <button class="zoom-btn" id="zoom-out" title="Zoom out (−)">−</button>
       <span id="zoom-label" title="Reset zoom">100%</span>
       <button class="zoom-btn" id="zoom-in"  title="Zoom in (+)">+</button>
@@ -59,9 +72,9 @@
       <div class="panel-label" id="recents-label" data-label="recents" style="display:none">Recents</div>
       <ul id="component-list"></ul>
 
-      <button id="add-component-toggle">+ Add component</button>
+      <button id="add-component-toggle">Add Component</button>
 
-      <button id="jumper-library-toggle">+ Jumper Library</button>
+      <button id="jumper-library-toggle">Jumper Library</button>
 
       <div id="jumper-library-section" style="display:none">
         <div class="panel-label">Jumper Library</div>
@@ -126,8 +139,6 @@
       <ul id="layers-list"></ul>
       <div class="panel-label" id="wires-label">Wires</div>
       <ul id="wires-list"></ul>
-      <div class="panel-label" id="resistors-label">Resistors</div>
-      <ul id="resistors-list"></ul>
       <div class="panel-label" id="bom-label" style="display:none">Jumper BoM</div>
       <div id="bom-inner"></div>
     </aside>

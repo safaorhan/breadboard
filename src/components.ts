@@ -15,6 +15,13 @@ const componentModules = import.meta.glob('../lib/components/*.json', { eager: t
 export const PRESET_LIBRARY: ComponentDef[] =
   Object.values(componentModules).map(m => (m as { default: ComponentDef }).default)
 
+// SVG illustration URLs — keyed by filename (e.g. "oled.svg")
+const svgModules = import.meta.glob('../lib/components/*.svg', { query: '?url', eager: true })
+export function getIllustrationUrl(file: string): string | null {
+  const mod = svgModules[`../lib/components/${file}`] as { default: string } | undefined
+  return mod?.default ?? null
+}
+
 // Auto-imported from lib/jumper-sets/*.json — each file is one JumperSet (kit).
 const jumperSetModules = import.meta.glob('../lib/jumper-sets/*.json', { eager: true })
 export const PRESET_JUMPER_LIBRARY: JumperSet[] =

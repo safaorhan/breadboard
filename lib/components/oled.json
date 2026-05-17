@@ -1,0 +1,28 @@
+{
+  "id": "preset-oled",
+  "name": "OLED",
+  "colSpan": 10,
+  "rowSpan": 9,
+  "pins": [
+    { "name": "*",   "col": 0, "row": "top" },
+    { "name": "*",   "col": 1, "row": "top" },
+    { "name": "*",   "col": 2, "row": "top" },
+    { "name": "GND", "col": 3, "row": "top" },
+    { "name": "VCC", "col": 4, "row": "top" },
+    { "name": "SCL", "col": 5, "row": "top" },
+    { "name": "SDA", "col": 6, "row": "top" },
+    { "name": "*",   "col": 7, "row": "top" },
+    { "name": "*",   "col": 8, "row": "top" },
+    { "name": "*",   "col": 9, "row": "top" },
+    { "name": "*",   "col": 0, "row": "bottom" },
+    { "name": "*",   "col": 1, "row": "bottom" },
+    { "name": "*",   "col": 2, "row": "bottom" },
+    { "name": "*",   "col": 3, "row": "bottom" },
+    { "name": "*",   "col": 4, "row": "bottom" },
+    { "name": "*",   "col": 5, "row": "bottom" },
+    { "name": "*",   "col": 6, "row": "bottom" },
+    { "name": "*",   "col": 7, "row": "bottom" },
+    { "name": "*",   "col": 8, "row": "bottom" },
+    { "name": "*",   "col": 9, "row": "bottom" }
+  ]
+}

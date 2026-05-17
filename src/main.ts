@@ -1,9 +1,9 @@
-import { state, onStateChange, initDB, addComponentDef, updateComponentDef, removeComponentDef, setComponentColor, toggleComponentLock, toggleComponentVisibility, rotateComponent, removeComponent, removeWire, removeResistor, updateResistorValue, addJumperDef, removeJumperDef, updateJumperDef, setActiveJumperSet, selectItem } from './state'
+import { state, onStateChange, initDB, addComponentDef, updateComponentDef, removeComponentDef, setComponentColor, toggleComponentLock, toggleComponentVisibility, rotateComponent, removeComponent, removeWire, addJumperDef, removeJumperDef, updateJumperDef, setActiveJumperSet, selectItem } from './state'
 import { matchJumper, COPPER_COLOR } from './jumpers'
 import { COMPONENT_COLORS, getColor } from './colors'
 import { initSVG, render, renderSidebar } from './render'
-import { renderWiresList, renderResistorsList } from './layers'
-import { initDrag, startPlacement, cancelCurrentDrag, deleteSelected, setResistorMode, setDefaultResistorValue } from './drag'
+import { renderWiresList } from './layers'
+import { initDrag, startPlacement, cancelCurrentDrag, deleteSelected } from './drag'
 import { renderTable } from './table'
 import type { Net } from './nets'
 import { renderLayersPanel } from './layers'
@@ -15,10 +15,8 @@ const tableInner      = document.getElementById('table-inner')       as HTMLDivE
 const sidebarList      = document.getElementById('component-list')    as HTMLUListElement
 const layersList       = document.getElementById('layers-list')       as HTMLUListElement
 const wiresList        = document.getElementById('wires-list')        as HTMLUListElement
-const resistorsList    = document.getElementById('resistors-list')    as HTMLUListElement
 const componentsLabel  = document.getElementById('components-label')  as HTMLElement
 const wiresLabel       = document.getElementById('wires-label')       as HTMLElement
-const resistorsLabel   = document.getElementById('resistors-label')   as HTMLElement
 
 function makeCollapsible(label: HTMLElement, content: HTMLElement): void {
   label.classList.add('collapsible')
@@ -95,29 +93,6 @@ initDrag(svg)
   })
   svg.addEventListener('mouseleave', hideHoverLabels)
 }
-
-// ── Resistor tool ────────────────────────────────────────────────────────
-const resistorModeBtn   = document.getElementById('resistor-mode-btn')   as HTMLButtonElement
-const resistorValueInput = document.getElementById('resistor-value-input') as HTMLInputElement
-
-let resistorModeActive = false
-
-function setResistorModeUI(active: boolean): void {
-  resistorModeActive = active
-  setResistorMode(active)
-  resistorModeBtn.classList.toggle('active', active)
-}
-
-resistorModeBtn.addEventListener('click', () => setResistorModeUI(!resistorModeActive))
-
-resistorValueInput.addEventListener('input', () => {
-  const val = resistorValueInput.value.trim()
-  if (val) setDefaultResistorValue(val)
-  // If a resistor is currently selected, update it live
-  if (state.selectedType === 'resistor' && state.selectedId) {
-    updateResistorValue(state.selectedId, val || '?')
-  }
-})
 
 // ── Zoom ────────────────────────────────────────────────────────────────
 let zoomLevel = 1
@@ -213,6 +188,19 @@ function loadUI(): void {
 }
 
 loadUI()
+
+// ── Theme toggle ─────────────────────────────────────────────────────────
+const themeToggleBtn = document.getElementById('theme-toggle') as HTMLButtonElement
+
+function applyTheme(theme: 'dark' | 'light'): void {
+  if (theme === 'light') document.documentElement.dataset.theme = 'light'
+  else                   delete document.documentElement.dataset.theme
+  localStorage.setItem('breadboard-theme', theme)
+}
+
+themeToggleBtn.addEventListener('click', () => {
+  applyTheme(document.documentElement.dataset.theme === 'light' ? 'dark' : 'light')
+})
 
 sidebarHandle.addEventListener('mousedown', (e) => startResize('left',  e, sidebarHandle, sidebarEl))
 layersHandle.addEventListener('mousedown',  (e) => startResize('right', e, layersHandle,  layersPanelEl))
@@ -502,12 +490,10 @@ jumperCancelBtn.addEventListener('click', exitJumperEdit)
 
 function showJumperSection(): void {
   jumperLibrarySection.style.display = ''
-  jumperLibraryToggle.textContent    = '× Jumper Library'
   jumperLibraryToggle.classList.add('open')
 }
 function hideJumperSection(): void {
   jumperLibrarySection.style.display = 'none'
-  jumperLibraryToggle.textContent    = '+ Jumper Library'
   jumperLibraryToggle.classList.remove('open')
 }
 
@@ -679,21 +665,12 @@ function update(): void {
   if (libraryLabel) libraryLabel.textContent = `Library (${state.componentLibrary.length})`
   componentsLabel.textContent  = `Components (${state.placedComponents.length})`
   wiresLabel.textContent       = `Wires (${state.wires.length})`
-  resistorsLabel.textContent   = `Resistors (${state.resistors.length})`
   lastNets = renderTable(tableInner, state)
   renderLayersPanel(layersList, state.placedComponents, state.componentLibrary, state.selectedId)
   renderWiresList(wiresList, state)
-  renderResistorsList(resistorsList, state)
   renderJumperSetSelector()
   renderJumperList()
   renderBoM()
-  // Sync value input to selected resistor
-  if (state.selectedType === 'resistor' && state.selectedId) {
-    const r = state.resistors.find(r => r.id === state.selectedId)
-    if (r && document.activeElement !== resistorValueInput) {
-      resistorValueInput.value = r.value
-    }
-  }
 }
 
 function fitToScreen(): void {
@@ -712,7 +689,6 @@ initDB().then(() => {
 
 makeCollapsible(componentsLabel, layersList)
 makeCollapsible(wiresLabel,      wiresList)
-makeCollapsible(resistorsLabel,  resistorsList)
 makeCollapsible(bomLabel,        bomInner)
 
 // --- Context menu ---
@@ -833,18 +809,6 @@ wiresList.addEventListener('click', (e) => {
   else selectItem(wireId, 'wire')
 })
 
-// --- Resistors list ---
-
-resistorsList.addEventListener('click', (e) => {
-  const target = e.target as HTMLElement
-  const li = target.closest('.wire-item') as HTMLElement | null
-  if (!li) return
-  const resistorId = li.dataset.resistorId!
-  e.stopPropagation()
-  if (target.closest('[data-action="delete-resistor"]')) removeResistor(resistorId)
-  else selectItem(resistorId, 'resistor')
-})
-
 // --- Sidebar + edit mode ---
 
 const addComponentSection = document.getElementById('add-component-section') as HTMLDivElement
@@ -856,13 +820,11 @@ const deleteBtn           = document.getElementById('form-delete-btn')        as
 
 function showFormSection(): void {
   addComponentSection.style.display = ''
-  addComponentToggle.textContent    = '× Close'
   addComponentToggle.classList.add('open')
 }
 
 function hideFormSection(): void {
   addComponentSection.style.display = 'none'
-  addComponentToggle.textContent    = '+ Add component'
   addComponentToggle.classList.remove('open')
 }
 

@@ -14,7 +14,6 @@ import {
 export const state: AppState = {
   placedComponents:  [],
   wires:             [],
-  resistors:         [],
   jumperSets:        [],
   activeJumperSetId: null,
   jumperLibrary:     [],
@@ -27,7 +26,7 @@ const listeners: (() => void)[] = []
 let nextColorIdx    = 0
 let activeProject: Project = {
   id: '', name: 'Default', createdAt: 0, updatedAt: 0,
-  placedComponents: [], wires: [], resistors: [], activeJumperSetId: null,
+  placedComponents: [], wires: [], activeJumperSetId: null,
 }
 let activeJumperSet: JumperSet | null = null
 let allJumperSets:   StoredJumperSet[] = []
@@ -37,7 +36,6 @@ let allJumperSets:   StoredJumperSet[] = []
 function saveStateToDB(): void {
   activeProject.placedComponents  = state.placedComponents
   activeProject.wires             = state.wires
-  activeProject.resistors         = state.resistors
   activeProject.activeJumperSetId = state.activeJumperSetId
   saveProject(activeProject).catch(() => {})
 }
@@ -72,7 +70,6 @@ export async function initDB(): Promise<void> {
     instanceNum: p.instanceNum ?? 1,
   }))
   state.wires     = project.wires
-  state.resistors = project.resistors
 
   allJumperSets    = jumperSets
   state.jumperSets = jumperSets
@@ -111,7 +108,6 @@ export function onStateChange(fn: () => void): void {
 export function _resetStateForTest(library: ComponentDef[]): void {
   state.placedComponents  = []
   state.wires             = []
-  state.resistors         = []
   state.jumperSets        = []
   state.activeJumperSetId = null
   state.jumperLibrary     = []
@@ -156,25 +152,6 @@ export function updateJumperDef(originalPitch: number, updates: JumperDef): void
   activeJumperSet.jumpers[idx] = updates
   state.jumperLibrary = [...activeJumperSet.jumpers]
   saveActiveJumperSet()
-  notify()
-}
-
-// ── Resistors ─────────────────────────────────────────────────────────────────
-
-export function addResistor(from: string, to: string, value = '1K'): void {
-  state.resistors.push({ id: crypto.randomUUID(), from, to, value })
-  notify()
-}
-
-export function removeResistor(id: string): void {
-  state.resistors = state.resistors.filter(r => r.id !== id)
-  notify()
-}
-
-export function updateResistorValue(id: string, value: string): void {
-  const r = state.resistors.find(r => r.id === id)
-  if (!r) return
-  r.value = value
   notify()
 }
 

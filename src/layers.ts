@@ -1,4 +1,4 @@
-import type { PlacedComponent, ComponentDef, AppState, Resistor } from './types'
+import type { PlacedComponent, ComponentDef, AppState } from './types'
 import { getColor } from './colors'
 import { getComponentPinHole } from './components'
 import { wireColor } from './jumpers'
@@ -130,52 +130,6 @@ function resolveEndpoint(hole: string, state: AppState): string {
     }
   }
   return hole
-}
-
-export function renderResistorsList(list: HTMLElement, state: AppState): void {
-  list.innerHTML = ''
-  if (state.resistors.length === 0) {
-    const empty = document.createElement('li')
-    empty.className   = 'layer-empty'
-    empty.textContent = 'No resistors yet'
-    list.appendChild(empty)
-    return
-  }
-  for (const r of [...state.resistors].reverse()) {
-    const li = document.createElement('li')
-    li.className = ['wire-item', r.id === state.selectedId ? 'selected' : ''].filter(Boolean).join(' ')
-    li.dataset.resistorId = r.id
-
-    const val = document.createElement('span')
-    val.className   = 'resistor-list-value'
-    val.textContent = r.value
-
-    const from = document.createElement('span')
-    from.className   = 'wire-endpoint'
-    from.textContent = resolveEndpoint(r.from, state)
-
-    const sep = document.createElement('span')
-    sep.className   = 'wire-sep'
-    sep.textContent = '↔'
-
-    const to = document.createElement('span')
-    to.className   = 'wire-endpoint'
-    to.textContent = resolveEndpoint(r.to, state)
-
-    const del = document.createElement('button')
-    del.className      = 'layer-btn layer-btn-del'
-    del.title          = 'Delete resistor'
-    del.innerHTML      = ICON.trash
-    del.dataset.resistorId = r.id
-    del.dataset.action     = 'delete-resistor'
-
-    li.appendChild(val)
-    li.appendChild(from)
-    li.appendChild(sep)
-    li.appendChild(to)
-    li.appendChild(del)
-    list.appendChild(li)
-  }
 }
 
 export function renderWiresList(list: HTMLElement, state: AppState): void {

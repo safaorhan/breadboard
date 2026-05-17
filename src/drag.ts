@@ -1,19 +1,13 @@
 import {
   state,
   addWire, removeWire,
-  addResistor, removeResistor,
   placeComponent, moveComponent, removeComponent,
   selectItem,
 } from './state'
-import { snapToHole, BOARD_COLS, PITCH, MARGIN_LEFT, MARGIN_TOP, ROW_Y_UNITS, rowFromYUnit, getHolePosition } from './board'
-import { clearLayer, renderGhostComponent, renderPreviewWire, renderPreviewResistor } from './render'
+import { snapToHole, BOARD_COLS, PITCH, MARGIN_LEFT, MARGIN_TOP, ROW_Y_UNITS, rowFromYUnit } from './board'
+import { clearLayer, renderGhostComponent, renderPreviewWire } from './render'
 import { getComponentPinHole, getAllOccupiedHoles } from './components'
 import type { ComponentDef } from './types'
-
-let resistorMode = false
-let defaultResistorValue = '1K'
-export function setResistorMode(active: boolean):       void { resistorMode = active }
-export function setDefaultResistorValue(val: string):   void { defaultResistorValue = val }
 
 type DragMode =
   | { mode: 'idle' }
@@ -46,9 +40,8 @@ export function cancelCurrentDrag(): void {
 
 export function deleteSelected(): void {
   if (!state.selectedId) return
-  if (state.selectedType === 'component')  removeComponent(state.selectedId)
-  else if (state.selectedType === 'wire')  removeWire(state.selectedId)
-  else if (state.selectedType === 'resistor') removeResistor(state.selectedId)
+  if (state.selectedType === 'component') removeComponent(state.selectedId)
+  else if (state.selectedType === 'wire') removeWire(state.selectedId)
   selectItem(null, null)
 }
 
@@ -156,8 +149,7 @@ function onMouseMove(e: MouseEvent): void {
   const { x, y } = getSVGPoint(e)
 
   if (dragMode.mode === 'wiring') {
-    if (resistorMode) renderPreviewResistor(svg, dragMode.fromHole, x, y, defaultResistorValue)
-    else              renderPreviewWire(svg, dragMode.fromHole, x, y, state.jumperLibrary)
+    renderPreviewWire(svg, dragMode.fromHole, x, y, state.jumperLibrary)
     return
   }
 
@@ -185,14 +177,7 @@ function onMouseUp(e: MouseEvent): void {
     const { x, y } = getSVGPoint(e)
     const toHole   = snapToHole(x, y)
     if (toHole && toHole !== dragMode.fromHole && !getAllOccupiedHoles(state).has(toHole)) {
-      if (resistorMode) {
-        const p1   = getHolePosition(dragMode.fromHole)
-        const p2   = getHolePosition(toHole)
-        const dist = Math.sqrt((p2.x - p1.x) ** 2 + (p2.y - p1.y) ** 2) / PITCH
-        if (dist >= 2 && dist <= 20) addResistor(dragMode.fromHole, toHole, defaultResistorValue)
-      } else {
-        addWire(dragMode.fromHole, toHole)
-      }
+      addWire(dragMode.fromHole, toHole)
     }
     dragMode = { mode: 'idle' }
     clearLayer(svg, 'preview-layer')
@@ -222,11 +207,6 @@ function onSVGClick(e: MouseEvent): void {
 
   if (target.dataset.wireId) {
     selectItem(target.dataset.wireId, 'wire')
-    return
-  }
-
-  if (target.dataset.resistorId) {
-    selectItem(target.dataset.resistorId, 'resistor')
     return
   }
 
