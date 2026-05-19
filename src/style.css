@@ -723,7 +723,7 @@ body.projects-mode #topbar { display: flex; }
 /* ─── Jumper BoM ─────────────────────────────────────────────────────────── */
 .bom-list {
   list-style: none;
-  padding: 0 6px 8px;
+  padding: 0 0 8px;
   display: flex;
   flex-direction: column;
 }
@@ -731,7 +731,7 @@ body.projects-mode #topbar { display: flex; }
   display: flex;
   align-items: center;
   gap: 6px;
-  padding: 0 2px 0 10px;
+  padding: 0 16px;
   min-height: 28px;
   border-radius: var(--r);
   font-size: 11px;
@@ -857,30 +857,37 @@ body.projects-mode #topbar { display: flex; }
 }
 #canvas-container svg.placing { cursor: cell; }
 
-/* ─── Connection table ───────────────────────────────────────────────────── */
-#table-inner table {
-  border-collapse: collapse;
-  font-size: 11px;
-  width: 100%;
+/* ─── Connections list ───────────────────────────────────────────────────── */
+.conn-list {
+  list-style: none;
+  padding: 0 0 8px;
 }
-#table-inner td {
-  border-bottom: 1px solid var(--border);
-  padding: 0;
-  vertical-align: middle;
-}
-#table-inner tr:last-child td { border-bottom: none; }
-#table-inner p { color: var(--text-3); font-style: italic; font-size: 11px; padding: 6px 12px; }
 
-.link-cell-inner {
+.conn-item {
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  gap: 8px;
-  padding: 5px 10px;
-  overflow: hidden;
+  gap: 4px;
+  padding: 0 16px;
+  min-height: 28px;
+  border-radius: var(--r);
+  transition: background 0.08s;
+  cursor: default;
 }
-.link-cell-inner-right {
-  border-left: 1px solid var(--border);
+.conn-item:hover { background: var(--bg-hover); }
+.conn-item.panel-hover { background: var(--bg-selected); }
+
+.conn-sep {
+  font-size: 10px;
+  color: var(--text-3);
+  flex-shrink: 0;
+  padding: 0 2px;
+}
+
+.conn-empty {
+  color: var(--text-3);
+  font-style: italic;
+  font-size: 11px;
+  padding: 6px 16px;
 }
 
 .chip {
@@ -893,9 +900,8 @@ body.projects-mode #topbar { display: flex; }
   border-radius: 3px;
   flex-shrink: 0;
 }
-.chip-comp { background: var(--bg-3); color: var(--text-1); font-weight: 500; }
-.chip-pin  { background: rgba(24,160,251,0.15); color: var(--accent); font-family: 'SF Mono','Menlo',monospace; }
-.chip-hole { background: var(--bg-3); color: var(--text-2); font-family: 'SF Mono','Menlo',monospace; }
+.chip-comp { font-weight: 500; }
+.chip-pin  { background: rgba(0,0,0,0.75); color: rgba(255,255,255,0.9); font-family: 'SF Mono','Menlo',monospace; }
 
 /* ─── Right layers panel ─────────────────────────────────────────────────── */
 #layers-panel {

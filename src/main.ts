@@ -831,8 +831,9 @@ function hideColorPicker(): void {
   colorPicker.classList.remove('visible')
 }
 
-const bomLabel = document.getElementById('bom-label') as HTMLElement
-const bomInner = document.getElementById('bom-inner') as HTMLDivElement
+const bomLabel          = document.getElementById('bom-label')          as HTMLElement
+const bomInner          = document.getElementById('bom-inner')          as HTMLDivElement
+const connectionsLabel  = document.getElementById('connections-label')  as HTMLElement
 
 function renderBoM(): void {
   if (!state.wires.length || !state.jumperLibrary.length) {
@@ -907,7 +908,7 @@ function setTableHover(netRoot: string | null): void {
 }
 
 tableInner.addEventListener('mouseover', (e) => {
-  const row = (e.target as HTMLElement).closest('tr') as HTMLElement | null
+  const row = (e.target as HTMLElement).closest('.conn-item') as HTMLElement | null
   setTableHover(row?.dataset.netRoot ?? null)
 })
 tableInner.addEventListener('mouseleave', () => setTableHover(null))
@@ -947,9 +948,10 @@ initDB().then(async () => {
 
 window.addEventListener('popstate', () => handleRoute())
 
-makeCollapsible(componentsLabel, layersList)
-makeCollapsible(wiresLabel,      wiresList)
-makeCollapsible(bomLabel,        bomInner)
+makeCollapsible(componentsLabel,  layersList)
+makeCollapsible(wiresLabel,       wiresList)
+makeCollapsible(connectionsLabel, tableInner)
+makeCollapsible(bomLabel,         bomInner)
 
 // Close insert popup when clicking outside it
 document.addEventListener('click', (e) => {

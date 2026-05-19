@@ -3,7 +3,7 @@ import { analyzeNets, type PinRef } from './nets'
 import { getColor } from './colors'
 
 interface Endpoint {
-  label:    string   // "ESP32 #2" when duplicate, "ESP32" otherwise
+  label:    string
   pinName:  string
   colorIdx: number
 }
@@ -19,7 +19,10 @@ export function renderTable(container: HTMLElement, state: AppState): typeof net
 
   const nets = analyzeNets(state)
   if (nets.length === 0) {
-    container.innerHTML = '<p>No connections yet.</p>'
+    const p = document.createElement('p')
+    p.className   = 'conn-empty'
+    p.textContent = 'No connections yet.'
+    container.appendChild(p)
     return nets
   }
 
@@ -29,28 +32,22 @@ export function renderTable(container: HTMLElement, state: AppState): typeof net
     return { label: pin.componentName, pinName: pin.pinName, colorIdx }
   }
 
-  // Count how many nets each component label appears in (for orientation)
   const compFreq = new Map<string, number>()
   for (const net of nets) {
     const seen = new Set<string>()
     for (const pin of net.pins) {
       const e = toEndpoint(pin)
-      if (!seen.has(e.label)) {
-        seen.add(e.label)
-        compFreq.set(e.label, (compFreq.get(e.label) ?? 0) + 1)
-      }
+      if (!seen.has(e.label)) { seen.add(e.label); compFreq.set(e.label, (compFreq.get(e.label) ?? 0) + 1) }
     }
   }
 
-  // For each net, anchor on pins[0] and pair with every other pin.
-  // Orient so the more-frequent component is on the left.
   const pairs: Pair[] = []
   for (const net of nets) {
     const anchor = toEndpoint(net.pins[0])
     for (let i = 1; i < net.pins.length; i++) {
       const other = toEndpoint(net.pins[i])
-      const af = compFreq.get(anchor.label) ?? 0
-      const of_ = compFreq.get(other.label) ?? 0
+      const af  = compFreq.get(anchor.label) ?? 0
+      const of_ = compFreq.get(other.label)  ?? 0
       if (of_ > af || (of_ === af && other.label < anchor.label)) {
         pairs.push({ left: other, right: anchor, netRoot: net.root })
       } else {
@@ -59,60 +56,49 @@ export function renderTable(container: HTMLElement, state: AppState): typeof net
     }
   }
 
-  if (pairs.length === 0) {
-    container.innerHTML = '<p>No connections yet.</p>'
-    return nets
-  }
-
-  // Sort: left label → left pin name
   pairs.sort((a, b) => {
     if (a.left.label  !== b.left.label)  return a.left.label.localeCompare(b.left.label)
     if (a.right.label !== b.right.label) return a.right.label.localeCompare(b.right.label)
     return a.left.pinName.localeCompare(b.left.pinName)
   })
 
-  const table = document.createElement('table')
-  const tbody = table.createTBody()
+  const ul = document.createElement('ul')
+  ul.className = 'conn-list'
 
   for (const pair of pairs) {
-    const row = tbody.insertRow()
-    row.dataset.netRoot = pair.netRoot
+    const li = document.createElement('li')
+    li.className       = 'conn-item'
+    li.dataset.netRoot = pair.netRoot
 
-    const leftTd   = row.insertCell()
-    const leftWrap = document.createElement('div')
-    leftWrap.className = 'link-cell-inner'
-    appendEnd(leftWrap, pair.left, 'left')
-    leftTd.appendChild(leftWrap)
+    li.appendChild(makeCompChip(pair.left))
+    li.appendChild(makePinChip(pair.left.pinName))
+    const sep = document.createElement('span')
+    sep.className   = 'conn-sep'
+    sep.textContent = '—'
+    li.appendChild(sep)
+    li.appendChild(makePinChip(pair.right.pinName))
+    li.appendChild(makeCompChip(pair.right))
 
-    const rightTd   = row.insertCell()
-    const rightWrap = document.createElement('div')
-    rightWrap.className = 'link-cell-inner link-cell-inner-right'
-    appendEnd(rightWrap, pair.right, 'right')
-    rightTd.appendChild(rightWrap)
+    ul.appendChild(li)
   }
 
-  container.appendChild(table)
+  container.appendChild(ul)
   return nets
 }
 
-function appendEnd(td: HTMLElement, end: Endpoint, side: 'left' | 'right'): void {
-  const color    = getColor(end.colorIdx)
-  const compChip = chip(end.label,    'chip-comp')
-  const pinChip  = chip(end.pinName,  'chip-pin')
-  compChip.style.background = color.stroke
-  compChip.style.color      = color.text
-  if (side === 'left') {
-    td.appendChild(compChip)
-    td.appendChild(pinChip)
-  } else {
-    td.appendChild(pinChip)
-    td.appendChild(compChip)
-  }
+function makeCompChip(end: Endpoint): HTMLElement {
+  const color = getColor(end.colorIdx)
+  const span  = document.createElement('span')
+  span.className        = 'chip chip-comp'
+  span.textContent      = end.label
+  span.style.background = color.stroke
+  span.style.color      = color.text
+  return span
 }
 
-function chip(text: string, cls: string): HTMLElement {
+function makePinChip(pin: string): HTMLElement {
   const span = document.createElement('span')
-  span.className   = `chip ${cls}`
-  span.textContent = text
+  span.className   = 'chip chip-pin'
+  span.textContent = pin
   return span
 }
