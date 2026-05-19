@@ -36,13 +36,82 @@ let allJumperSets:   StoredJumperSet[] = []
 
 const SESSION_KEY = 'breadboard-project'
 
+// ── Cross-tab sync ────────────────────────────────────────────────────────────
+// BroadcastChannel lets tabs on the same origin notify each other when the
+// shared IndexedDB changes.  Each tab only reacts to messages that concern
+// its own active project so tabs working on different projects are unaffected.
+
+const syncChannel = typeof BroadcastChannel !== 'undefined'
+  ? new BroadcastChannel('breadboard-sync')
+  : null
+
+// Set while we are applying data that arrived from another tab so that
+// saveStateToDB() and the broadcast helpers know not to echo it back.
+let isExternalUpdate = false
+
+// Debounce handle for the post-save broadcast to avoid flooding other tabs
+// during rapid edits (placing a component, drawing many wires, etc.).
+let broadcastSaveTimer: ReturnType<typeof setTimeout> | null = null
+
+function scheduleBroadcastSave(projectId: string): void {
+  if (isExternalUpdate) return
+  if (broadcastSaveTimer) clearTimeout(broadcastSaveTimer)
+  broadcastSaveTimer = setTimeout(() => {
+    broadcastSaveTimer = null
+    syncChannel?.postMessage({ type: 'project-saved', projectId })
+  }, 1500)
+}
+
+function broadcastImmediate(type: string, projectId: string): void {
+  if (isExternalUpdate) return
+  syncChannel?.postMessage({ type, projectId })
+}
+
+// Re-render the UI from current state without writing back to the DB.
+// Used when applying an external update so we don't echo it back.
+function notifyListenersOnly(): void {
+  listeners.forEach(fn => fn())
+}
+
+if (syncChannel) {
+  syncChannel.onmessage = async (event: MessageEvent<{ type: string; projectId: string }>) => {
+    const { type, projectId } = event.data
+
+    if (type === 'project-saved' && projectId === activeProject.id) {
+      // Another tab saved our project — reload the fresh version from DB.
+      const fresh = await loadProject(projectId)
+      if (!fresh) return
+      isExternalUpdate = true
+      applyProjectToState(fresh)
+      notifyListenersOnly()
+      isExternalUpdate = false
+    }
+
+    if (type === 'project-deleted' && projectId === activeProject.id) {
+      // Another tab deleted the project we have open — switch to the next one.
+      const remaining = (await loadAllProjects()).sort((a, b) => b.updatedAt - a.updatedAt)
+      if (remaining.length > 0) {
+        applyProjectToState(remaining[0])
+      } else {
+        const newId  = await createProject()
+        const fresh  = await loadProject(newId)
+        if (fresh) applyProjectToState(fresh)
+      }
+      notifyListenersOnly()
+    }
+  }
+}
+
 // ── Persistence ───────────────────────────────────────────────────────────────
 
 function saveStateToDB(): void {
+  if (isExternalUpdate) return
   activeProject.placedComponents  = state.placedComponents
   activeProject.wires             = state.wires
   activeProject.activeJumperSetId = state.activeJumperSetId
-  saveProject(activeProject).catch(() => {})
+  saveProject(activeProject)
+    .then(() => scheduleBroadcastSave(activeProject.id))
+    .catch(() => {})
 }
 
 function saveActiveJumperSet(): void {
@@ -144,8 +213,9 @@ export async function getAllProjects(): Promise<Project[]> {
 
 export function renameProject(name: string): void {
   activeProject.name = name.trim() || 'Untitled'
-  saveProject(activeProject).catch(() => {})
-  // No notify() — canvas hasn't changed; caller updates the DOM directly
+  saveProject(activeProject)
+    .then(() => broadcastImmediate('project-saved', activeProject.id))
+    .catch(() => {})
 }
 
 export async function renameProjectById(id: string, name: string): Promise<void> {
@@ -153,12 +223,16 @@ export async function renameProjectById(id: string, name: string): Promise<void>
   const project = await loadProject(id)
   if (!project) return
   project.name = name.trim() || 'Untitled'
-  saveProject(project).catch(() => {})
+  saveProject(project)
+    .then(() => broadcastImmediate('project-saved', id))
+    .catch(() => {})
 }
 
 export function updateThumbnail(dataURL: string): void {
   activeProject.thumbnail = dataURL
   saveProject(activeProject).catch(() => {})
+  // No broadcast — thumbnail updates are cosmetic and would cause
+  // unnecessary reloads in other tabs.
 }
 
 export async function openProject(projectId: string): Promise<void> {
@@ -185,7 +259,7 @@ export async function createProject(): Promise<string> {
 
 export async function deleteProjectById(id: string): Promise<void> {
   await dbDeleteProject(id)
-  // If deleting the active project, open another one
+  broadcastImmediate('project-deleted', id)
   if (id === activeProject.id) {
     const remaining = await loadAllProjects()
     if (remaining.length > 0) {
@@ -193,7 +267,6 @@ export async function deleteProjectById(id: string): Promise<void> {
       applyProjectToState(next)
       notify()
     } else {
-      // Create a fresh project so the app is never left without one
       const newId = await createProject()
       const fresh = await loadProject(newId)
       if (fresh) { applyProjectToState(fresh); notify() }
