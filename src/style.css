@@ -870,11 +870,11 @@ body.projects-mode #topbar { display: flex; }
   padding: 0 16px;
   min-height: 28px;
   border-radius: var(--r);
+  cursor: pointer;
   transition: background 0.08s;
-  cursor: default;
 }
-.conn-item:hover { background: var(--bg-hover); }
-.conn-item.panel-hover { background: var(--bg-selected); }
+.conn-item:hover        { background: var(--bg-hover); }
+.conn-item.panel-hover  { background: var(--bg-selected); }
 
 .conn-sep {
   font-size: 10px;
