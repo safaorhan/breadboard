@@ -736,8 +736,8 @@ body.projects-mode #topbar { display: flex; }
   color: var(--text-2);
 }
 .bom-color-dot {
-  width: 8px;
-  height: 8px;
+  width: 10px;
+  height: 10px;
   border-radius: 50%;
   flex-shrink: 0;
   border: 1px solid rgba(255,255,255,0.12);
@@ -747,8 +747,8 @@ body.projects-mode #topbar { display: flex; }
 
 /* ─── Wire color dot (wires panel) ──────────────────────────────────────── */
 .wire-color-dot {
-  width: 7px;
-  height: 7px;
+  width: 10px;
+  height: 10px;
   border-radius: 50%;
   flex-shrink: 0;
   border: 1px solid rgba(255,255,255,0.12);
