@@ -1219,7 +1219,7 @@ body.projects-mode #topbar { display: flex; }
   stroke-width: 3.5;
   stroke-dasharray: 8 6;
   animation: wire-sweep 0.35s linear infinite;
-  filter: brightness(1.7) drop-shadow(0 0 4px rgba(255,255,255,0.4));
+  filter: drop-shadow(0 0 4px rgba(255,255,255,0.4));
 }
 
 .preview-wire { stroke-width: 1.5; stroke-dasharray: 4 3; pointer-events: none; opacity: 0.7; }
