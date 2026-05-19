@@ -913,8 +913,8 @@ tableInner.addEventListener('mouseleave', () => setTableHover(null))
 
 function update(): void {
   render(svg, state)
-  componentsLabel.textContent = `Components (${state.placedComponents.length})`
-  wiresLabel.textContent      = `Jumpers (${state.wires.length})`
+  componentsLabel.querySelector('.label-text')!.textContent = `Components (${state.placedComponents.length})`
+  wiresLabel.querySelector('.label-text')!.textContent      = `Jumpers (${state.wires.length})`
   lastNets = renderTable(tableInner, state)
   renderLayersPanel(layersList, state.placedComponents, state.componentLibrary, state.selectedId)
   renderWiresList(wiresList, state)
