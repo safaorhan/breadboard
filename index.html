@@ -5,6 +5,7 @@
   <script>if(localStorage.getItem('breadboard-theme')==='light')document.documentElement.dataset.theme='light'</script>
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Breadboard</title>
+  <link rel="icon" type="image/svg+xml" href="/logo.svg" />
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
@@ -15,15 +16,7 @@
   <!-- ── Top bar (projects mode only) ──────────────────────────────────── -->
   <header id="topbar">
     <div id="app-logo" title="All Projects">
-      <svg width="18" height="18" viewBox="0 0 18 18" fill="none" xmlns="http://www.w3.org/2000/svg" style="pointer-events:none">
-        <rect x="1" y="5" width="16" height="8" rx="1.5" fill="#e8f5ed" stroke="#2d8a50" stroke-width="1.2"/>
-        <circle cx="4"  cy="9" r="1.4" fill="#8a8478"/>
-        <circle cx="7"  cy="9" r="1.4" fill="#8a8478"/>
-        <circle cx="10" cy="9" r="1.4" fill="#8a8478"/>
-        <circle cx="13" cy="9" r="1.4" fill="#8a8478"/>
-        <line x1="1" y1="9" x2="4" y2="9" stroke="#0d99ff" stroke-width="1.2" stroke-linecap="round"/>
-        <line x1="4" y1="9" x2="7" y2="9" stroke="#0d99ff" stroke-width="1.2" stroke-linecap="round"/>
-      </svg>
+      <img src="/logo.svg" width="20" height="20" alt="Breadboard" style="pointer-events:none" />
       <span id="app-name">Breadboard</span>
     </div>
 
@@ -45,15 +38,7 @@
       <!-- Logo button: icon + chevron only -->
       <div id="sidebar-topbar">
         <button id="logo-menu-btn" aria-label="Main menu" aria-haspopup="menu">
-          <svg width="18" height="18" viewBox="0 0 18 18" fill="none" xmlns="http://www.w3.org/2000/svg" style="pointer-events:none;flex-shrink:0">
-            <rect x="1" y="5" width="16" height="8" rx="1.5" fill="#e8f5ed" stroke="#2d8a50" stroke-width="1.2"/>
-            <circle cx="4"  cy="9" r="1.4" fill="#8a8478"/>
-            <circle cx="7"  cy="9" r="1.4" fill="#8a8478"/>
-            <circle cx="10" cy="9" r="1.4" fill="#8a8478"/>
-            <circle cx="13" cy="9" r="1.4" fill="#8a8478"/>
-            <line x1="1" y1="9" x2="4" y2="9" stroke="#0d99ff" stroke-width="1.2" stroke-linecap="round"/>
-            <line x1="4" y1="9" x2="7" y2="9" stroke="#0d99ff" stroke-width="1.2" stroke-linecap="round"/>
-          </svg>
+          <img src="/logo.svg" width="18" height="18" alt="" style="pointer-events:none;flex-shrink:0" />
           <svg width="14" height="14" viewBox="0 0 16 16" style="pointer-events:none;flex-shrink:0"><use href="#icon-chevron"/></svg>
         </button>
       </div>

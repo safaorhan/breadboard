@@ -63,7 +63,7 @@ body.projects-mode #topbar { display: flex; }
   padding-right: 14px;
   border-right: 1px solid var(--border-2);
 }
-#app-logo svg { flex-shrink: 0; }
+#app-logo img { flex-shrink: 0; opacity: 0.85; }
 #app-name {
   font-size: 12px;
   font-weight: 600;
@@ -1217,7 +1217,7 @@ body.projects-mode #topbar { display: flex; }
   flex-shrink: 0;
 }
 #app-logo:hover { background: var(--bg-hover); }
-#app-logo svg   { flex-shrink: 0; }
+#app-logo img   { flex-shrink: 0; opacity: 0.85; }
 #app-name {
   font-size: 12px;
   font-weight: 600;
