@@ -1241,14 +1241,14 @@ body.projects-mode #topbar { display: flex; }
 
 /* Option D — travelling dots: round-cap near-zero dashes become circles (active) */
 @keyframes wire-dots {
-  from { stroke-dashoffset: 12; }
+  from { stroke-dashoffset: 6; }
   to   { stroke-dashoffset: 0; }
 }
 
 .wire.panel-hover {
   stroke-width: 4;
-  stroke-dasharray: 0.1 11;
-  animation: wire-dots 0.5s linear infinite;
+  stroke-dasharray: 0.1 6;
+  animation: wire-dots 0.3s linear infinite;
   filter: drop-shadow(0 0 3px rgba(255,255,255,0.4));
 }
 
