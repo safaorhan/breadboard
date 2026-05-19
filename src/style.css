@@ -1006,6 +1006,19 @@ body.projects-mode #topbar { display: flex; }
   box-shadow: 0 0 0 2px var(--accent);
 }
 
+/* Wire action group (pitch + delete) — hidden until hover */
+.wire-actions {
+  display: flex;
+  align-items: center;
+  gap: 0;
+  flex-shrink: 0;
+  margin-left: auto;
+  opacity: 0;
+  transition: opacity 0.1s;
+}
+.wire-item:hover .wire-actions,
+.wire-item.selected .wire-actions { opacity: 1; }
+
 /* Wire items */
 .wire-item {
   display: flex;
@@ -1041,8 +1054,7 @@ body.projects-mode #topbar { display: flex; }
   font-size: 9px;
   color: var(--text-3);
   flex-shrink: 0;
-  margin-left: auto;
-  padding-right: 2px;
+  padding: 0 4px;
 }
 
 /* ─── Color picker popup ─────────────────────────────────────────────────── */

@@ -43,15 +43,7 @@ const ICON = {
     <path d="M21 12a9 9 0 01-15 6.7L3 16"/>
   </svg>`,
 
-  trash: `<svg width="14" height="14" viewBox="0 0 24 24" fill="none"
-      stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
-      style="pointer-events:none">
-    <polyline points="3 6 5 6 21 6"/>
-    <path d="M19 6l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6"/>
-    <path d="M10 11v6"/>
-    <path d="M14 11v6"/>
-    <path d="M9 6V4a1 1 0 011-1h4a1 1 0 011 1v2"/>
-  </svg>`,
+  trash: `<svg width="14" height="14" viewBox="0 0 24 24" style="pointer-events:none"><use href="#icon-x"/></svg>`,
 }
 
 export function renderLayersPanel(
@@ -160,6 +152,9 @@ export function renderWiresList(list: HTMLElement, state: AppState): void {
     to.className   = 'wire-endpoint'
     to.textContent = resolveEndpoint(wire.to)
 
+    const actions = document.createElement('div')
+    actions.className = 'wire-actions'
+
     const len = document.createElement('span')
     len.className   = 'wire-len'
     len.textContent = `${+wireLen(wire.from, wire.to).toFixed(1)}p`
@@ -171,12 +166,14 @@ export function renderWiresList(list: HTMLElement, state: AppState): void {
     del.dataset.wireId = wire.id
     del.dataset.action = 'delete-wire'
 
+    actions.appendChild(len)
+    actions.appendChild(del)
+
     li.appendChild(dot)
     li.appendChild(from)
     li.appendChild(sep)
     li.appendChild(to)
-    li.appendChild(len)
-    li.appendChild(del)
+    li.appendChild(actions)
     list.appendChild(li)
   }
 }
