@@ -26,16 +26,7 @@ export function initSVG(container: HTMLElement): SVGSVGElement {
   svg.setAttribute('width',   String(SVG_WIDTH))
   svg.setAttribute('height',  String(SVG_HEIGHT))
   svg.setAttribute('viewBox', `0 0 ${SVG_WIDTH} ${SVG_HEIGHT}`)
-
-  // Background as a filterable group so it can be greyed with the board
-  const bgLayer = svgEl('g')
-  bgLayer.id = 'bg-layer'
-  const bgRect = svgEl('rect')
-  bgRect.setAttribute('width',  String(SVG_WIDTH))
-  bgRect.setAttribute('height', String(SVG_HEIGHT))
-  bgRect.setAttribute('fill',   '#faf8f4')
-  bgLayer.appendChild(bgRect)
-  svg.appendChild(bgLayer)
+  svg.setAttribute('fill',    '#faf8f4')  // inherited default for child elements
 
   for (const id of ['board-layer', 'wire-layer', 'component-layer', 'preview-layer']) {
     const g = svgEl('g')

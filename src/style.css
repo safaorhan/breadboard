@@ -1245,7 +1245,9 @@ body.projects-mode #topbar { display: flex; }
   50%       { opacity: 0.5; }
 }
 
-svg.has-highlight #bg-layer,
+svg.has-highlight {
+  background-color: #888 !important; /* grey the cream SVG background */
+}
 svg.has-highlight #board-layer,
 svg.has-highlight #component-layer {
   filter: grayscale(1) brightness(0.45);
