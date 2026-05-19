@@ -1469,17 +1469,21 @@ body.projects-mode #projects-screen    { display: flex; }
 #insert-search:focus { border-color: var(--accent); }
 
 #insert-search-clear {
+  position: absolute;
+  top: 8px;
+  bottom: 6px;
+  right: 14px;
+  display: none;
+  align-items: center;
   background: none;
   border: none;
   color: var(--text-3);
   cursor: pointer;
-  padding: 2px 4px;
+  padding: 0 4px;
   font-size: 14px;
   line-height: 1;
-  flex-shrink: 0;
-  display: none;
 }
-#insert-search-clear.visible { display: block; }
+#insert-search-clear.visible { display: flex; }
 
 #insert-grid {
   padding: 4px 6px 8px;
@@ -1611,6 +1615,91 @@ body.projects-mode #projects-screen    { display: flex; }
   opacity: 0.35;
   cursor: not-allowed;
 }
+
+/* User library items with edit/delete actions */
+.insert-user-item {
+  cursor: pointer;
+}
+.insert-item-actions {
+  display: none;
+  gap: 1px;
+  flex-shrink: 0;
+  margin-left: auto;
+}
+.insert-user-item:hover .insert-item-actions { display: flex; }
+.insert-item-action {
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 3px;
+  border-radius: 3px;
+  color: var(--text-3);
+  display: flex;
+  align-items: center;
+  line-height: 1;
+  transition: color 0.1s, background 0.1s;
+}
+.insert-item-action:hover { color: var(--text-1); background: var(--bg-3); }
+.insert-item-delete:hover { color: #e05; }
+
+/* Confirmation view */
+#insert-confirm-view {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  overflow: hidden;
+}
+#insert-confirm-header {
+  display: flex;
+  align-items: center;
+  padding: 10px 14px 8px;
+  border-bottom: 1px solid var(--border);
+  flex-shrink: 0;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-1);
+}
+#insert-confirm-body {
+  padding: 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+#insert-confirm-body p {
+  font-size: 11.5px;
+  color: var(--text-2);
+  line-height: 1.55;
+  margin: 0;
+}
+#insert-confirm-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+}
+#insert-confirm-cancel {
+  background: none;
+  border: 1px solid var(--border-2);
+  color: var(--text-2);
+  font-size: 11px;
+  font-family: inherit;
+  cursor: pointer;
+  padding: 5px 10px;
+  border-radius: var(--r);
+  transition: color 0.1s, background 0.1s;
+}
+#insert-confirm-cancel:hover { color: var(--text-1); background: var(--bg-hover); }
+#insert-confirm-ok {
+  background: #c0392b;
+  color: #fff;
+  border: none;
+  font-size: 11px;
+  font-family: inherit;
+  cursor: pointer;
+  padding: 5px 10px;
+  border-radius: var(--r);
+  transition: opacity 0.1s;
+}
+#insert-confirm-ok:hover { opacity: 0.85; }
 
 /* Section headers in insert grid */
 .insert-section-header {

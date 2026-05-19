@@ -89,7 +89,7 @@
         <!-- View: add component form -->
         <div id="insert-add-view" style="display:none">
           <div id="insert-add-header">
-            <span>Add Component</span>
+            <span id="insert-add-title">Add Component</span>
             <button id="insert-add-cancel" type="button">Cancel</button>
           </div>
           <form id="insert-comp-form">
@@ -104,6 +104,20 @@
             </label>
             <button type="submit">Add to library</button>
           </form>
+        </div>
+
+        <!-- View: delete confirmation -->
+        <div id="insert-confirm-view" style="display:none">
+          <div id="insert-confirm-header">
+            <span>Delete Component</span>
+          </div>
+          <div id="insert-confirm-body">
+            <p>Delete <strong id="insert-confirm-name"></strong> from your library? Any placed instances will also be removed.</p>
+            <div id="insert-confirm-actions">
+              <button id="insert-confirm-cancel" type="button">Cancel</button>
+              <button id="insert-confirm-ok" type="button">Delete</button>
+            </div>
+          </div>
         </div>
 
       </div>

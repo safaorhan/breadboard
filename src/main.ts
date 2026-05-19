@@ -1,8 +1,9 @@
-import { state, onStateChange, initDB, setComponentColor, setComponentLabel, toggleComponentLock, toggleComponentVisibility, rotateComponent, removeComponent, removeWire, selectItem, getActiveProjectId, getActiveProjectName, renameProject, updateThumbnail, openProject, createProject, deleteProjectById, getAllProjects, importProjectData, renameProjectById, addComponentDef } from './state'
+import { state, onStateChange, initDB, setComponentColor, setComponentLabel, toggleComponentLock, toggleComponentVisibility, rotateComponent, removeComponent, removeWire, selectItem, getActiveProjectId, getActiveProjectName, renameProject, updateThumbnail, openProject, createProject, deleteProjectById, getAllProjects, importProjectData, renameProjectById, addComponentDef, updateComponentDef, removeComponentDef } from './state'
 import type { BBFile } from './state'
 import type { Project } from './db'
+import type { ComponentDef } from './types'
 import { matchJumper, COPPER_COLOR } from './jumpers'
-import { COMPONENT_COLORS, getColor } from './colors'
+import { COMPONENT_COLORS } from './colors'
 import { initSVG, render } from './render'
 import { renderWiresList } from './layers'
 import { initDrag, startPlacement, cancelCurrentDrag, deleteSelected } from './drag'
@@ -42,6 +43,11 @@ const insertCompForm    = document.getElementById('insert-comp-form')     as HTM
 const insertCompName    = document.getElementById('insert-comp-name')     as HTMLInputElement
 const insertCompRowspan = document.getElementById('insert-comp-rowspan')  as HTMLInputElement
 const insertCompPins    = document.getElementById('insert-comp-pins')     as HTMLTextAreaElement
+const insertAddTitle    = document.getElementById('insert-add-title')     as HTMLSpanElement
+const insertConfirmView = document.getElementById('insert-confirm-view')  as HTMLDivElement
+const insertConfirmName = document.getElementById('insert-confirm-name')  as HTMLElement
+const insertConfirmCancel = document.getElementById('insert-confirm-cancel') as HTMLButtonElement
+const insertConfirmOk   = document.getElementById('insert-confirm-ok')   as HTMLButtonElement
 
 function makeCollapsible(label: HTMLElement, content: HTMLElement): void {
   label.classList.add('collapsible')
@@ -716,7 +722,47 @@ function getRecentDefIds(): string[] {
   return recent
 }
 
-function buildInsertGridItem(def: { id: string; name: string }): HTMLButtonElement {
+function buildInsertGridItem(def: ComponentDef): HTMLElement {
+  if (def.source === 'user') {
+    const container = document.createElement('div')
+    container.className = 'insert-item insert-user-item'
+
+    const nameEl = document.createElement('span')
+    nameEl.className   = 'insert-item-name'
+    nameEl.textContent = def.name
+
+    const actions = document.createElement('div')
+    actions.className = 'insert-item-actions'
+
+    const editBtn = document.createElement('button')
+    editBtn.type      = 'button'
+    editBtn.className = 'insert-item-action'
+    editBtn.title     = 'Edit'
+    editBtn.innerHTML = PENCIL_SVG
+    editBtn.addEventListener('click', (e) => {
+      e.stopPropagation()
+      showInsertAddForm(def)
+    })
+
+    const deleteBtn = document.createElement('button')
+    deleteBtn.type      = 'button'
+    deleteBtn.className = 'insert-item-action insert-item-delete'
+    deleteBtn.title     = 'Delete'
+    deleteBtn.innerHTML = TRASH_SVG
+    deleteBtn.addEventListener('click', (e) => {
+      e.stopPropagation()
+      showInsertConfirmView(def.id, def.name)
+    })
+
+    actions.append(editBtn, deleteBtn)
+    container.append(nameEl, actions)
+    container.addEventListener('click', () => {
+      hideInsertPopup()
+      startPlacement(def.id)
+    })
+    return container
+  }
+
   const btn = document.createElement('button')
   btn.className = 'insert-item'
   btn.type      = 'button'
@@ -746,9 +792,12 @@ function renderInsertGrid(): void {
 
   if (!q) {
     const recentIds = getRecentDefIds()
-    for (const id of recentIds) {
-      const def = state.componentLibrary.find(d => d.id === id)
-      if (def) insertGrid.appendChild(buildInsertGridItem(def))
+    if (recentIds.length) {
+      insertGrid.appendChild(makeInsertSectionHeader('Recents'))
+      for (const id of recentIds) {
+        const def = state.componentLibrary.find(d => d.id === id)
+        if (def) insertGrid.appendChild(buildInsertGridItem(def))
+      }
     }
     return
   }
@@ -807,6 +856,9 @@ insertSearchClear.addEventListener('click', () => {
 
 const insertCompSubmitBtn = insertCompForm.querySelector('button[type="submit"]') as HTMLButtonElement
 
+let editingCompId:   string | null = null
+let pendingDeleteId: string | null = null
+
 function updateInsertSubmitBtn(): void {
   insertCompSubmitBtn.disabled = !insertCompName.value.trim() || !insertCompRowspan.value.trim()
 }
@@ -814,23 +866,64 @@ function updateInsertSubmitBtn(): void {
 insertCompName.addEventListener('input',    updateInsertSubmitBtn)
 insertCompRowspan.addEventListener('input', updateInsertSubmitBtn)
 
-function showInsertAddForm(): void {
-  insertSearchView.style.display = 'none'
-  insertAddView.style.display    = ''
-  insertCompName.value    = ''
-  insertCompRowspan.value = ''
-  insertCompPins.value    = ''
+function showInsertAddForm(def?: ComponentDef): void {
+  insertSearchView.style.display  = 'none'
+  insertConfirmView.style.display = 'none'
+  insertAddView.style.display     = ''
+
+  editingCompId = def?.id ?? null
+
+  if (def) {
+    insertCompName.value    = def.name
+    insertCompRowspan.value = String(def.rowSpan)
+    const topPins    = def.pins.filter(p => p.row === 'top').sort((a, b) => a.col - b.col).map(p => p.name)
+    const bottomPins = def.pins.filter(p => p.row === 'bottom').sort((a, b) => a.col - b.col).map(p => p.name)
+    insertCompPins.value = [topPins.join(' '), bottomPins.join(' ')].filter(l => l.length > 0).join('\n')
+    insertAddTitle.textContent       = 'Edit Component'
+    insertCompSubmitBtn.textContent  = 'Update Component'
+  } else {
+    insertCompName.value    = ''
+    insertCompRowspan.value = ''
+    insertCompPins.value    = ''
+    insertAddTitle.textContent       = 'Add Component'
+    insertCompSubmitBtn.textContent  = 'Add to library'
+  }
+
   updateInsertSubmitBtn()
   requestAnimationFrame(() => insertCompName.focus())
 }
 
 function showInsertSearchView(): void {
-  insertAddView.style.display    = 'none'
-  insertSearchView.style.display = ''
+  insertAddView.style.display     = 'none'
+  insertConfirmView.style.display = 'none'
+  insertSearchView.style.display  = ''
+  editingCompId = null
+  renderInsertGrid()
   requestAnimationFrame(() => insertSearch.focus())
 }
 
-insertAddCompBtn.addEventListener('click', showInsertAddForm)
+function showInsertConfirmView(id: string, name: string): void {
+  insertSearchView.style.display  = 'none'
+  insertAddView.style.display     = 'none'
+  insertConfirmView.style.display = ''
+  pendingDeleteId = id
+  insertConfirmName.textContent = name
+}
+
+insertConfirmCancel.addEventListener('click', () => {
+  pendingDeleteId = null
+  showInsertSearchView()
+})
+
+insertConfirmOk.addEventListener('click', () => {
+  if (pendingDeleteId) {
+    removeComponentDef(pendingDeleteId)
+    pendingDeleteId = null
+  }
+  showInsertSearchView()
+})
+
+insertAddCompBtn.addEventListener('click', () => showInsertAddForm())
 insertAddCancel.addEventListener('click',  showInsertSearchView)
 
 insertCompForm.addEventListener('submit', (e) => {
@@ -852,7 +945,12 @@ insertCompForm.addEventListener('submit', (e) => {
     ...bottomPins.map((pname, i) => ({ name: pname, col: i, row: 'bottom' as const })),
   ]
 
-  addComponentDef({ name, colSpan, rowSpan, pins })
+  if (editingCompId) {
+    updateComponentDef(editingCompId, { name, colSpan, rowSpan, pins, source: 'user' })
+    editingCompId = null
+  } else {
+    addComponentDef({ name, colSpan, rowSpan, pins })
+  }
   showInsertSearchView()
 })
 
