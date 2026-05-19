@@ -360,7 +360,7 @@ function renderWireLayer(svg: SVGSVGElement, state: AppState): void {
     line.setAttribute('x1', String(x1)); line.setAttribute('y1', String(y1))
     line.setAttribute('x2', String(x2)); line.setAttribute('y2', String(y2))
     line.setAttribute('class', isSelected ? 'wire selected' : 'wire')
-    line.style.stroke = isSelected ? 'var(--amber)' : wireColor(wire.from, wire.to, state.jumperLibrary)
+    line.style.stroke = wireColor(wire.from, wire.to, state.jumperLibrary)
     line.dataset.wireId = wire.id
     const border = svgEl('line')
     border.setAttribute('x1', String(x1)); border.setAttribute('y1', String(y1))
