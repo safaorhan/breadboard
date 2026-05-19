@@ -723,17 +723,20 @@ body.projects-mode #topbar { display: flex; }
 /* ─── Jumper BoM ─────────────────────────────────────────────────────────── */
 .bom-list {
   list-style: none;
-  padding: 2px 10px 8px;
+  padding: 0 6px 8px;
   display: flex;
   flex-direction: column;
-  gap: 2px;
 }
 .bom-item {
   display: flex;
   align-items: center;
-  gap: 7px;
+  gap: 6px;
+  padding: 0 2px 0 10px;
+  min-height: 28px;
+  border-radius: var(--r);
   font-size: 11px;
   color: var(--text-2);
+  transition: background 0.08s;
 }
 .bom-color-dot {
   width: 10px;
@@ -1039,11 +1042,11 @@ body.projects-mode #topbar { display: flex; }
 .wire-item {
   display: flex;
   align-items: center;
-  gap: 4px;
-  padding: 4px 2px 4px 10px;
+  gap: 6px;
+  padding: 0 2px 0 10px;
   border-radius: var(--r);
   cursor: pointer;
-  min-height: 26px;
+  min-height: 28px;
   transition: background 0.08s;
 }
 .wire-item:hover    { background: var(--bg-hover); }
