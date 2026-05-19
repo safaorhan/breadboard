@@ -1443,13 +1443,17 @@ body.projects-mode #projects-screen    { display: flex; }
   padding: 8px 8px 6px;
   flex-shrink: 0;
   border-bottom: 1px solid var(--border);
+}
+
+#insert-search-footer {
   display: flex;
-  align-items: center;
-  gap: 6px;
+  justify-content: flex-end;
+  padding: 6px 10px;
+  border-top: 1px solid var(--border);
+  flex-shrink: 0;
 }
 #insert-search {
-  flex: 1;
-  min-width: 0;
+  width: 100%;
   background: var(--bg-3);
   border: 1px solid transparent;
   color: var(--text-1);
@@ -1509,7 +1513,7 @@ body.projects-mode #projects-screen    { display: flex; }
   white-space: nowrap;
 }
 
-/* Add component button in search bar */
+/* Add component — plain text link button */
 #insert-add-comp-btn {
   background: none;
   border: none;
@@ -1518,13 +1522,11 @@ body.projects-mode #projects-screen    { display: flex; }
   font-weight: 500;
   font-family: inherit;
   cursor: pointer;
-  white-space: nowrap;
-  flex-shrink: 0;
-  padding: 4px 6px;
-  border-radius: var(--r);
-  transition: background 0.1s;
+  padding: 2px 0;
+  text-decoration: none;
+  transition: opacity 0.1s;
 }
-#insert-add-comp-btn:hover { background: var(--accent-bg); }
+#insert-add-comp-btn:hover { opacity: 0.75; }
 
 /* Add component form view */
 #insert-add-header {
