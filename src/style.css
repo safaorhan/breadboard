@@ -723,7 +723,7 @@ body.projects-mode #topbar { display: flex; }
 /* ─── Jumper BoM ─────────────────────────────────────────────────────────── */
 .bom-list {
   list-style: none;
-  padding: 0 0 8px;
+  padding: 0 6px 8px;
   display: flex;
   flex-direction: column;
 }
@@ -731,7 +731,7 @@ body.projects-mode #topbar { display: flex; }
   display: flex;
   align-items: center;
   gap: 6px;
-  padding: 0 16px;
+  padding: 0 10px;
   min-height: 28px;
   border-radius: var(--r);
   font-size: 11px;
@@ -860,14 +860,14 @@ body.projects-mode #topbar { display: flex; }
 /* ─── Connections list ───────────────────────────────────────────────────── */
 .conn-list {
   list-style: none;
-  padding: 0 0 8px;
+  padding: 0 6px 8px;
 }
 
 .conn-item {
   display: flex;
   align-items: center;
   gap: 4px;
-  padding: 0 16px;
+  padding: 0 10px;
   min-height: 28px;
   border-radius: var(--r);
   cursor: pointer;
