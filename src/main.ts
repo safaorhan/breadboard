@@ -830,7 +830,7 @@ function renderBoM(): void {
     return Math.sqrt((b.x - a.x) ** 2 + (b.y - a.y) ** 2) / PITCH
   }
 
-  const counts = new Map<string, { name: string; color: string; count: number; len: number }>()
+  const counts = new Map<string, { name: string; color: string; count: number; len: number; wireIds: string[] }>()
   for (const wire of state.wires) {
     const m = matchJumper(wire.from, wire.to, state.jumperLibrary)
     let key: string, name: string, color: string, len: number
@@ -842,8 +842,10 @@ function renderBoM(): void {
       name = `${+len.toFixed(1)}p*`
       color = COPPER_COLOR
     }
-    if (!counts.has(key)) counts.set(key, { name, color, count: 0, len })
-    counts.get(key)!.count++
+    if (!counts.has(key)) counts.set(key, { name, color, count: 0, len, wireIds: [] })
+    const entry = counts.get(key)!
+    entry.count++
+    entry.wireIds.push(wire.id)
   }
 
   bomInner.innerHTML = ''
@@ -851,7 +853,8 @@ function renderBoM(): void {
   ul.className = 'bom-list'
   for (const item of [...counts.values()].sort((a, b) => a.len - b.len)) {
     const li = document.createElement('li')
-    li.className = 'bom-item'
+    li.className         = 'bom-item'
+    li.dataset.wireIds   = item.wireIds.join(' ')
 
     const dot = document.createElement('span')
     dot.className        = 'bom-color-dot'
@@ -870,6 +873,24 @@ function renderBoM(): void {
   }
   bomInner.appendChild(ul)
 }
+
+let bomHoverIds: string[] = []
+
+function setBomHover(wireIds: string[]): void {
+  for (const id of bomHoverIds)
+    svg.querySelector(`[data-wire-id="${id}"]`)?.classList.remove('panel-hover')
+  bomHoverIds = []
+  for (const id of wireIds) {
+    const el = svg.querySelector(`[data-wire-id="${id}"]`)
+    if (el) { el.classList.add('panel-hover'); bomHoverIds.push(id) }
+  }
+}
+
+bomInner.addEventListener('mouseover', (e) => {
+  const item = (e.target as HTMLElement).closest('.bom-item') as HTMLElement | null
+  setBomHover(item?.dataset.wireIds?.split(' ').filter(Boolean) ?? [])
+})
+bomInner.addEventListener('mouseleave', () => setBomHover([]))
 
 let lastNets: Net[] = []
 
