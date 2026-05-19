@@ -73,11 +73,37 @@
 
       <!-- Insert popup (shown above action bar) -->
       <div id="insert-popup">
-        <div id="insert-search-wrap">
-          <input id="insert-search" type="text" placeholder="Search components…" autocomplete="off" spellcheck="false" />
-          <button id="insert-search-clear" tabindex="-1" title="Clear">×</button>
+
+        <!-- View: search + component list -->
+        <div id="insert-search-view">
+          <div id="insert-search-wrap">
+            <input id="insert-search" type="text" placeholder="Search components…" autocomplete="off" spellcheck="false" />
+            <button id="insert-search-clear" tabindex="-1" title="Clear">×</button>
+            <button id="insert-add-comp-btn" type="button">Add component</button>
+          </div>
+          <div id="insert-grid"></div>
         </div>
-        <div id="insert-grid"></div>
+
+        <!-- View: add component form -->
+        <div id="insert-add-view" style="display:none">
+          <div id="insert-add-header">
+            <span>Add Component</span>
+            <button id="insert-add-cancel" type="button">Cancel</button>
+          </div>
+          <form id="insert-comp-form">
+            <label>Name
+              <input id="insert-comp-name" type="text" placeholder="e.g. SSD1306" required autocomplete="off" />
+            </label>
+            <label>Height (pitch)
+              <input id="insert-comp-rowspan" type="number" min="1" max="16" placeholder="e.g. 9" required />
+            </label>
+            <label>Pins — top row then bottom row (space or newline separated)
+              <textarea id="insert-comp-pins" rows="4" placeholder="VCC GND SDA&#10;SCL INT RST"></textarea>
+            </label>
+            <button type="submit">Add to library</button>
+          </form>
+        </div>
+
       </div>
 
       <!-- Floating action bar -->

@@ -1,4 +1,4 @@
-import { state, onStateChange, initDB, setComponentColor, setComponentLabel, toggleComponentLock, toggleComponentVisibility, rotateComponent, removeComponent, removeWire, selectItem, getActiveProjectId, getActiveProjectName, renameProject, updateThumbnail, openProject, createProject, deleteProjectById, getAllProjects, importProjectData, renameProjectById } from './state'
+import { state, onStateChange, initDB, setComponentColor, setComponentLabel, toggleComponentLock, toggleComponentVisibility, rotateComponent, removeComponent, removeWire, selectItem, getActiveProjectId, getActiveProjectName, renameProject, updateThumbnail, openProject, createProject, deleteProjectById, getAllProjects, importProjectData, renameProjectById, addComponentDef } from './state'
 import type { BBFile } from './state'
 import type { Project } from './db'
 import { matchJumper, COPPER_COLOR } from './jumpers'
@@ -29,11 +29,19 @@ const logoMenuBtn      = document.getElementById('logo-menu-btn')       as HTMLB
 const projectMenuBtn   = document.getElementById('project-menu-btn')    as HTMLButtonElement
 const sidebarDropdown  = document.getElementById('sidebar-dropdown')    as HTMLDivElement
 const sidebarDropdownList = document.getElementById('sidebar-dropdown-list') as HTMLUListElement
-const insertBtn        = document.getElementById('insert-btn')          as HTMLButtonElement
-const insertPopup      = document.getElementById('insert-popup')        as HTMLDivElement
-const insertSearch     = document.getElementById('insert-search')       as HTMLInputElement
-const insertSearchClear = document.getElementById('insert-search-clear') as HTMLButtonElement
-const insertGrid       = document.getElementById('insert-grid')         as HTMLDivElement
+const insertBtn         = document.getElementById('insert-btn')           as HTMLButtonElement
+const insertPopup       = document.getElementById('insert-popup')         as HTMLDivElement
+const insertSearchView  = document.getElementById('insert-search-view')   as HTMLDivElement
+const insertAddView     = document.getElementById('insert-add-view')      as HTMLDivElement
+const insertSearch      = document.getElementById('insert-search')        as HTMLInputElement
+const insertSearchClear = document.getElementById('insert-search-clear')  as HTMLButtonElement
+const insertGrid        = document.getElementById('insert-grid')          as HTMLDivElement
+const insertAddCompBtn  = document.getElementById('insert-add-comp-btn')  as HTMLButtonElement
+const insertAddCancel   = document.getElementById('insert-add-cancel')    as HTMLButtonElement
+const insertCompForm    = document.getElementById('insert-comp-form')     as HTMLFormElement
+const insertCompName    = document.getElementById('insert-comp-name')     as HTMLInputElement
+const insertCompRowspan = document.getElementById('insert-comp-rowspan')  as HTMLInputElement
+const insertCompPins    = document.getElementById('insert-comp-pins')     as HTMLTextAreaElement
 
 function makeCollapsible(label: HTMLElement, content: HTMLElement): void {
   label.classList.add('collapsible')
@@ -759,6 +767,7 @@ function showInsertPopup(): void {
 function hideInsertPopup(): void {
   insertPopup.classList.remove('visible')
   insertBtn.classList.remove('active')
+  showInsertSearchView()
 }
 
 insertBtn.addEventListener('click', () => {
@@ -776,6 +785,47 @@ insertSearchClear.addEventListener('click', () => {
   insertSearchClear.classList.remove('visible')
   renderInsertGrid()
   insertSearch.focus()
+})
+
+function showInsertAddForm(): void {
+  insertSearchView.style.display = 'none'
+  insertAddView.style.display    = ''
+  insertCompName.value    = ''
+  insertCompRowspan.value = ''
+  insertCompPins.value    = ''
+  requestAnimationFrame(() => insertCompName.focus())
+}
+
+function showInsertSearchView(): void {
+  insertAddView.style.display    = 'none'
+  insertSearchView.style.display = ''
+  requestAnimationFrame(() => insertSearch.focus())
+}
+
+insertAddCompBtn.addEventListener('click', showInsertAddForm)
+insertAddCancel.addEventListener('click',  showInsertSearchView)
+
+insertCompForm.addEventListener('submit', (e) => {
+  e.preventDefault()
+  const name    = insertCompName.value.trim()
+  const rowSpan = parseInt(insertCompRowspan.value, 10)
+  if (!name || isNaN(rowSpan) || rowSpan < 1) return
+
+  const lines = insertCompPins.value
+    .split('\n')
+    .map(line => line.trim().split(/\s+/).filter(s => s.length > 0))
+    .filter(l => l.length > 0)
+
+  const topPins    = lines[0] ?? []
+  const bottomPins = lines[1] ?? []
+  const colSpan    = Math.max(topPins.length, bottomPins.length, 1)
+  const pins = [
+    ...topPins.map((pname, i)    => ({ name: pname, col: i, row: 'top'    as const })),
+    ...bottomPins.map((pname, i) => ({ name: pname, col: i, row: 'bottom' as const })),
+  ]
+
+  addComponentDef({ name, colSpan, rowSpan, pins })
+  showInsertSearchView()
 })
 
 // ── Color picker ─────────────────────────────────────────────────────────────

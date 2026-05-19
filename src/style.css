@@ -1430,14 +1430,26 @@ body.projects-mode #projects-screen    { display: flex; }
 }
 #insert-popup.visible { display: flex; }
 
+#insert-search-view,
+#insert-add-view {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  overflow: hidden;
+}
+
 #insert-search-wrap {
   position: relative;
   padding: 8px 8px 6px;
   flex-shrink: 0;
   border-bottom: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  gap: 6px;
 }
 #insert-search {
-  width: 100%;
+  flex: 1;
+  min-width: 0;
   background: var(--bg-3);
   border: 1px solid transparent;
   color: var(--text-1);
@@ -1452,17 +1464,14 @@ body.projects-mode #projects-screen    { display: flex; }
 #insert-search:focus { border-color: var(--accent); }
 
 #insert-search-clear {
-  position: absolute;
-  right: 14px;
-  top: 50%;
-  transform: translateY(-60%);
   background: none;
   border: none;
   color: var(--text-3);
   cursor: pointer;
-  padding: 2px;
+  padding: 2px 4px;
   font-size: 14px;
   line-height: 1;
+  flex-shrink: 0;
   display: none;
 }
 #insert-search-clear.visible { display: block; }
@@ -1499,6 +1508,102 @@ body.projects-mode #projects-screen    { display: flex; }
   text-overflow: ellipsis;
   white-space: nowrap;
 }
+
+/* Add component button in search bar */
+#insert-add-comp-btn {
+  background: none;
+  border: none;
+  color: var(--accent);
+  font-size: 11px;
+  font-weight: 500;
+  font-family: inherit;
+  cursor: pointer;
+  white-space: nowrap;
+  flex-shrink: 0;
+  padding: 4px 6px;
+  border-radius: var(--r);
+  transition: background 0.1s;
+}
+#insert-add-comp-btn:hover { background: var(--accent-bg); }
+
+/* Add component form view */
+#insert-add-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 14px 8px;
+  border-bottom: 1px solid var(--border);
+  flex-shrink: 0;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-1);
+}
+
+#insert-add-cancel {
+  background: none;
+  border: none;
+  color: var(--text-3);
+  font-size: 11px;
+  font-family: inherit;
+  cursor: pointer;
+  padding: 3px 6px;
+  border-radius: var(--r);
+  transition: color 0.1s, background 0.1s;
+}
+#insert-add-cancel:hover { color: var(--text-1); background: var(--bg-hover); }
+
+#insert-comp-form {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 12px 14px;
+  overflow-y: auto;
+  flex: 1;
+}
+
+#insert-comp-form label {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: 10px;
+  font-weight: 600;
+  color: var(--text-3);
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+}
+
+#insert-comp-form input,
+#insert-comp-form textarea {
+  background: var(--bg-3);
+  border: 1px solid var(--border-2);
+  color: var(--text-1);
+  border-radius: var(--r);
+  padding: 6px 8px;
+  font-size: 11px;
+  font-family: inherit;
+  outline: none;
+  transition: border-color 0.1s;
+}
+#insert-comp-form input::placeholder,
+#insert-comp-form textarea::placeholder { color: var(--text-3); }
+#insert-comp-form input:focus,
+#insert-comp-form textarea:focus { border-color: var(--accent); }
+#insert-comp-form textarea { resize: none; }
+
+#insert-comp-form button[type="submit"] {
+  background: var(--accent);
+  color: #fff;
+  border: none;
+  border-radius: var(--r);
+  padding: 7px 12px;
+  font-size: 11px;
+  font-weight: 500;
+  font-family: inherit;
+  cursor: pointer;
+  transition: opacity 0.1s;
+  align-self: flex-start;
+}
+#insert-comp-form button[type="submit"]:hover { opacity: 0.85; }
 
 /* ─── Projects screen ────────────────────────────────────────────────────── */
 #projects-screen {
