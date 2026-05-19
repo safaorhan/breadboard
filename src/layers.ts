@@ -1,6 +1,5 @@
 import type { PlacedComponent, ComponentDef, AppState } from './types'
 import { getColor } from './colors'
-import { getComponentPinHole } from './components'
 import { wireColor } from './jumpers'
 import { getHolePosition, PITCH } from './board'
 
@@ -114,22 +113,14 @@ export function renderLayersPanel(
   }
 }
 
-function resolveEndpoint(hole: string, state: AppState): string {
+function resolveEndpoint(hole: string): string {
   if (hole.includes(':')) {
     const rail = hole.slice(0, hole.lastIndexOf(':'))
     if (rail === 'top+' || rail === 'bottom+') return 'VCC'
     if (rail === 'top-' || rail === 'bottom-') return 'GND'
     return hole
   }
-  for (const placed of state.placedComponents) {
-    const def = state.componentLibrary.find(d => d.id === placed.defId)
-    if (!def) continue
-    for (const pin of def.pins) {
-      if (pin.name === '*') continue
-      if (getComponentPinHole(placed, pin, def) === hole) return `${def.name} ${pin.name}`
-    }
-  }
-  return hole
+  return hole   // raw hole ID: e.g. "J13", "A6"
 }
 
 export function renderWiresList(list: HTMLElement, state: AppState): void {
@@ -159,15 +150,15 @@ export function renderWiresList(list: HTMLElement, state: AppState): void {
 
     const from = document.createElement('span')
     from.className   = 'wire-endpoint'
-    from.textContent = resolveEndpoint(wire.from, state)
+    from.textContent = resolveEndpoint(wire.from)
 
     const sep = document.createElement('span')
     sep.className   = 'wire-sep'
-    sep.textContent = '↔'
+    sep.textContent = '-'
 
     const to = document.createElement('span')
     to.className   = 'wire-endpoint'
-    to.textContent = resolveEndpoint(wire.to, state)
+    to.textContent = resolveEndpoint(wire.to)
 
     const len = document.createElement('span')
     len.className   = 'wire-len'

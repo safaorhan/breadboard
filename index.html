@@ -12,7 +12,7 @@
 </head>
 <body>
 
-  <!-- ── Top bar ──────────────────────────────────────────────────────── -->
+  <!-- ── Top bar (projects mode only) ──────────────────────────────────── -->
   <header id="topbar">
     <div id="app-logo" title="All Projects">
       <svg width="18" height="18" viewBox="0 0 18 18" fill="none" xmlns="http://www.w3.org/2000/svg" style="pointer-events:none">
@@ -27,131 +27,117 @@
       <span id="app-name">Breadboard</span>
     </div>
 
-    <!-- Shown in projects mode only -->
     <span id="projects-topbar-title">All Projects</span>
-
-    <div id="topbar-center">
-      <!-- Shown in canvas mode only -->
-      <div id="project-name-wrap">
-        <span id="project-name"></span>
-        <input id="project-name-input" type="text" spellcheck="false" autocomplete="off" />
-      </div>
-    </div>
+    <div id="topbar-center"></div>
 
     <div id="topbar-right">
-      <!-- Shown in projects mode only -->
       <button id="import-project-btn">Import</button>
       <button id="new-project-btn">+ New project</button>
-      <div class="topbar-sep" id="new-project-sep"></div>
-
-      <button class="zoom-btn" id="theme-toggle" title="Toggle light/dark mode">
-        <svg class="icon-sun" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" style="pointer-events:none">
-          <circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M2 12h2M20 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/>
-        </svg>
-        <svg class="icon-moon" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" style="pointer-events:none">
-          <path d="M21 12.79A9 9 0 1111.21 3 7 7 0 0021 12.79z"/>
-        </svg>
-      </button>
-
-      <!-- Shown in canvas mode only -->
-      <div class="topbar-sep" id="zoom-sep"></div>
-      <button class="zoom-btn" id="zoom-out" title="Zoom out (−)">−</button>
-      <span id="zoom-label" title="Reset zoom">100%</span>
-      <button class="zoom-btn" id="zoom-in"  title="Zoom in (+)">+</button>
-      <button class="zoom-btn" id="zoom-fit" title="Fit to screen">
-        <svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" style="pointer-events:none">
-          <path d="M1 4V1h3M8 1h3v3M11 8v3H8M4 11H1V8"/>
-        </svg>
-      </button>
     </div>
   </header>
 
   <!-- ── Canvas app shell ──────────────────────────────────────────────── -->
   <div id="app">
 
-    <!-- Left: library + add component form -->
+    <!-- Left: logo menu, project menu, placed components, wires -->
     <aside id="sidebar">
 
-      <div class="panel-label" data-label="library">Library</div>
+      <!-- Logo menu button -->
+      <button id="logo-menu-btn" class="sidebar-menu-btn">
+        <svg width="14" height="14" viewBox="0 0 18 18" fill="none" xmlns="http://www.w3.org/2000/svg" style="pointer-events:none;flex-shrink:0">
+          <rect x="1" y="5" width="16" height="8" rx="1.5" fill="#e8f5ed" stroke="#2d8a50" stroke-width="1.2"/>
+          <circle cx="4"  cy="9" r="1.4" fill="#8a8478"/>
+          <circle cx="7"  cy="9" r="1.4" fill="#8a8478"/>
+          <circle cx="10" cy="9" r="1.4" fill="#8a8478"/>
+          <circle cx="13" cy="9" r="1.4" fill="#8a8478"/>
+          <line x1="1" y1="9" x2="4" y2="9" stroke="#0d99ff" stroke-width="1.2" stroke-linecap="round"/>
+          <line x1="4" y1="9" x2="7" y2="9" stroke="#0d99ff" stroke-width="1.2" stroke-linecap="round"/>
+        </svg>
+        <span class="sidebar-menu-label">Breadboard</span>
+        <svg class="sidebar-menu-chevron" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" style="pointer-events:none;flex-shrink:0">
+          <polyline points="6 9 12 15 18 9"/>
+        </svg>
+      </button>
 
-      <div id="library-search-wrap">
-        <input id="library-search" type="text" placeholder="Search…" autocomplete="off" spellcheck="false" />
-        <button id="library-search-clear" tabindex="-1" title="Clear">×</button>
-        <ul id="library-dropdown"></ul>
-      </div>
+      <!-- Project name menu button -->
+      <button id="project-menu-btn" class="sidebar-menu-btn">
+        <span id="project-name" class="sidebar-menu-label"></span>
+        <svg class="sidebar-menu-chevron" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" style="pointer-events:none;flex-shrink:0">
+          <polyline points="6 9 12 15 18 9"/>
+        </svg>
+      </button>
 
-      <div class="panel-label" id="recents-label" data-label="recents" style="display:none">Recents</div>
-      <ul id="component-list"></ul>
+      <div class="sidebar-divider"></div>
 
-      <button id="add-component-toggle">Add Component</button>
+      <div class="panel-label collapsible" id="components-label" style="padding-top:8px">Components</div>
+      <ul id="layers-list"></ul>
 
-      <button id="jumper-library-toggle">Jumper Library</button>
-
-      <div id="jumper-library-section" style="display:none">
-        <div class="panel-label">Jumper Library</div>
-        <select id="jumper-set-select"></select>
-        <ul id="jumper-list"></ul>
-        <div id="jumper-form-body">
-          <form id="add-jumper-form">
-            <label>Color
-              <div id="jumper-palette"></div>
-              <input id="jumper-color" type="color" value="#e53935" style="display:none" tabindex="-1" />
-            </label>
-            <label>Length (pitch units)
-              <input id="jumper-pitch" type="number" min="1" max="100" step="0.5" placeholder="e.g. 5" required />
-            </label>
-            <button type="submit" id="jumper-submit-btn">Add jumper</button>
-            <button type="button" id="jumper-cancel-btn" style="display:none">Cancel</button>
-          </form>
-        </div>
-      </div>
-
-      <div id="add-component-section" style="display:none">
-        <div class="panel-label" id="form-panel-label">Add component</div>
-        <div id="add-form-body">
-          <form id="add-component-form">
-            <label>Name
-              <input id="comp-name" type="text" placeholder="e.g. SSD1306" required />
-            </label>
-            <label>Height (pitch)
-              <input id="comp-rowspan" type="number" min="1" max="16" placeholder="e.g. 9" required />
-            </label>
-            <label>Pins — top row, then bottom row (space or newline separated)
-              <textarea id="comp-pins" rows="5" placeholder="VCC GND SDA&#10;SCL INT RST"></textarea>
-            </label>
-            <button type="submit" id="form-submit-btn">Add to library</button>
-            <button type="button" id="form-cancel-btn" style="display:none">Cancel</button>
-            <button type="button" id="form-delete-btn" style="display:none">Delete from library</button>
-          </form>
-        </div>
-      </div>
+      <div class="panel-label collapsible" id="wires-label">Jumpers</div>
+      <ul id="wires-list"></ul>
 
     </aside>
 
     <div id="sidebar-resize-handle" title="Drag to resize"></div>
 
-    <!-- Centre: canvas + connection table -->
+    <!-- Centre: canvas + floating action bar -->
     <main id="main">
       <div id="canvas-scroll-area">
         <div id="canvas-container"></div>
       </div>
-      <div id="table-resize-handle" title="Drag to resize"></div>
-      <div id="table-container">
-        <div class="panel-label">Connections</div>
-        <div id="table-inner"></div>
+
+      <!-- Insert popup (shown above action bar) -->
+      <div id="insert-popup">
+        <div id="insert-search-wrap">
+          <input id="insert-search" type="text" placeholder="Search components…" autocomplete="off" spellcheck="false" />
+          <button id="insert-search-clear" tabindex="-1" title="Clear">×</button>
+        </div>
+        <div id="insert-grid"></div>
+      </div>
+
+      <!-- Floating action bar -->
+      <div id="action-bar">
+        <button id="insert-btn">
+          <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" style="pointer-events:none">
+            <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
+          </svg>
+          Insert
+        </button>
       </div>
     </main>
 
     <div id="layers-resize-handle" title="Drag to resize"></div>
 
-    <!-- Right: placed components (layers panel) -->
+    <!-- Right: zoom/theme controls, connections, BoM -->
     <aside id="layers-panel">
-      <div class="panel-label" id="components-label" style="padding-top:12px">Components</div>
-      <ul id="layers-list"></ul>
-      <div class="panel-label" id="wires-label">Wires</div>
-      <ul id="wires-list"></ul>
-      <div class="panel-label" id="bom-label" style="display:none">Jumper BoM</div>
+
+      <div id="right-controls">
+        <button class="zoom-btn" id="theme-toggle" title="Toggle light/dark mode">
+          <svg class="icon-sun" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" style="pointer-events:none">
+            <circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M2 12h2M20 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/>
+          </svg>
+          <svg class="icon-moon" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" style="pointer-events:none">
+            <path d="M21 12.79A9 9 0 1111.21 3 7 7 0 0021 12.79z"/>
+          </svg>
+        </button>
+        <div class="topbar-sep"></div>
+        <button class="zoom-btn" id="zoom-out" title="Zoom out (−)">−</button>
+        <span id="zoom-label" title="Reset zoom">100%</span>
+        <button class="zoom-btn" id="zoom-in"  title="Zoom in (+)">+</button>
+        <button class="zoom-btn" id="zoom-fit" title="Fit to screen">
+          <svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" style="pointer-events:none">
+            <path d="M1 4V1h3M8 1h3v3M11 8v3H8M4 11H1V8"/>
+          </svg>
+        </button>
+      </div>
+
+      <div class="panel-divider"></div>
+
+      <div class="panel-label">Connections</div>
+      <div id="table-inner"></div>
+
+      <div class="panel-label collapsible" id="bom-label" style="display:none">Jumper BoM</div>
       <div id="bom-inner"></div>
+
     </aside>
 
   </div>
@@ -170,6 +156,11 @@
   </div>
 
   <div id="color-picker"></div>
+
+  <!-- Sidebar dropdown (logo menu & project menu) -->
+  <div id="sidebar-dropdown">
+    <ul id="sidebar-dropdown-list"></ul>
+  </div>
 
   <script type="module" src="/src/main.ts"></script>
 </body>
