@@ -132,7 +132,7 @@ body.projects-mode #topbar { display: flex; }
   gap: 5px;
 }
 
-/* Collapsible section — rotating triangle before the label text */
+/* Collapsible section */
 .panel-label.collapsible {
   cursor: pointer;
   padding: 7px 10px;
@@ -140,20 +140,17 @@ body.projects-mode #topbar { display: flex; }
   transition: background 0.1s;
 }
 .panel-label.collapsible:hover { background: var(--bg-hover); }
-.panel-label.collapsible::before {
-  content: '';
-  display: inline-block;
-  width: 0;
-  height: 0;
-  border-top:    3.5px solid transparent;
-  border-bottom: 3.5px solid transparent;
-  border-left:   5px solid var(--text-3);
+
+.collapsible-chevron {
+  display: inline-flex;
+  align-items: center;
   flex-shrink: 0;
+  color: var(--text-3);
   transition: transform 0.15s;
-  transform: rotate(90deg); /* default: open */
+  transform: rotate(0deg);       /* open: pointing down */
 }
-.panel-label.collapsible.collapsed::before {
-  transform: rotate(0deg);
+.panel-label.collapsible.collapsed .collapsible-chevron {
+  transform: rotate(-90deg);     /* closed: pointing right */
 }
 
 /* ─── Resize handles ─────────────────────────────────────────────────────── */

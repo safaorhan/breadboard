@@ -54,9 +54,7 @@
             <line x1="1" y1="9" x2="4" y2="9" stroke="#0d99ff" stroke-width="1.2" stroke-linecap="round"/>
             <line x1="4" y1="9" x2="7" y2="9" stroke="#0d99ff" stroke-width="1.2" stroke-linecap="round"/>
           </svg>
-          <svg width="14" height="14" viewBox="0 0 16 16" fill="none" style="pointer-events:none;flex-shrink:0">
-            <path fill="currentColor" d="M9.768 6.768a.5.5 0 0 1 .707.707l-2.12 2.121a.5.5 0 0 1-.708 0L5.525 7.475a.5.5 0 0 1 .708-.707l1.768 1.767z"/>
-          </svg>
+          <svg width="14" height="14" viewBox="0 0 16 16" style="pointer-events:none;flex-shrink:0"><use href="#icon-chevron"/></svg>
         </button>
       </div>
 
@@ -67,9 +65,7 @@
           <input id="project-name-input" type="text" spellcheck="false" autocomplete="off" maxlength="100" />
         </button>
         <button id="project-menu-btn" aria-label="Edit file menu" aria-haspopup="menu">
-          <svg width="12" height="12" viewBox="0 0 16 16" fill="none" style="pointer-events:none">
-            <path fill="currentColor" d="M9.768 6.768a.5.5 0 0 1 .707.707l-2.12 2.121a.5.5 0 0 1-.708 0L5.525 7.475a.5.5 0 0 1 .708-.707l1.768 1.767z"/>
-          </svg>
+          <svg width="12" height="12" viewBox="0 0 16 16" style="pointer-events:none"><use href="#icon-chevron"/></svg>
         </button>
       </div>
 
@@ -167,6 +163,13 @@
   <div id="sidebar-dropdown">
     <ul id="sidebar-dropdown-list"></ul>
   </div>
+
+  <!-- Shared icon definitions -->
+  <svg style="display:none" xmlns="http://www.w3.org/2000/svg">
+    <symbol id="icon-chevron" viewBox="0 0 16 16">
+      <path fill="currentColor" d="M9.768 6.768a.5.5 0 0 1 .707.707l-2.12 2.121a.5.5 0 0 1-.708 0L5.525 7.475a.5.5 0 0 1 .708-.707l1.768 1.767z"/>
+    </symbol>
+  </svg>
 
   <script type="module" src="/src/main.ts"></script>
 </body>
