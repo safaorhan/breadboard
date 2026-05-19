@@ -229,16 +229,16 @@ body.projects-mode #topbar { display: flex; }
 #sidebar-project-row {
   display: flex;
   align-items: center;
+  justify-content: flex-start;
   padding: 2px 8px 6px;
-  gap: 2px;
+  gap: 0;
   flex-shrink: 0;
 }
 
 #project-name-btn {
   display: flex;
   align-items: center;
-  flex: 1;
-  min-width: 0;
+  max-width: calc(100% - 32px);  /* leave room for chevron */
   padding: 4px 6px;
   background: none;
   border: none;
@@ -257,13 +257,11 @@ body.projects-mode #topbar { display: flex; }
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-  display: block;
-  width: 100%;
 }
 
 #project-name-input {
   display: none;
-  width: 100%;
+  width: 140px;
   background: none;
   border: none;
   outline: none;
