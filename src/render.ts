@@ -427,13 +427,11 @@ function renderIllustration(
 
 function renderComponentLayer(svg: SVGSVGElement, state: AppState): void {
   const layer = getLayer(svg, 'component-layer')
-  const defCounts = new Map<string, number>()
-  for (const p of state.placedComponents) defCounts.set(p.defId, (defCounts.get(p.defId) ?? 0) + 1)
   for (const placed of state.placedComponents) {
     if (placed.hidden) continue
     const def = state.componentLibrary.find(d => d.id === placed.defId)
     if (!def) continue
-    renderPlacedComponent(layer, placed, def, state.selectedId, defCounts)
+    renderPlacedComponent(layer, placed, def, state.selectedId)
   }
 }
 
@@ -442,7 +440,6 @@ function renderPlacedComponent(
   placed: PlacedComponent,
   def: ComponentDef,
   selectedId: string | null,
-  defCounts: Map<string, number>,
 ): void {
   const anchorYUnit = ROW_Y_UNITS[placed.anchorRow]
   const anchorX = MARGIN_LEFT + (placed.anchorCol - 1) * PITCH
@@ -489,10 +486,7 @@ function renderPlacedComponent(
     nameLabel.setAttribute('text-anchor', 'middle')
     nameLabel.setAttribute('class', 'component-label')
     nameLabel.style.fill = color.stroke
-    const autoName = (defCounts.get(placed.defId) ?? 0) > 1
-      ? `${def.name} #${placed.instanceNum}`
-      : def.name
-    nameLabel.textContent = placed.label ?? autoName
+    nameLabel.textContent = placed.label ?? def.name
     g.appendChild(nameLabel)
   }
 

@@ -49,20 +49,12 @@ export function analyzeNets(state: AppState): Net[] {
     uf.union(wire.from, wire.to)
   }
 
-  const defCounts = new Map<string, number>()
-  for (const p of state.placedComponents) {
-    defCounts.set(p.defId, (defCounts.get(p.defId) ?? 0) + 1)
-  }
-
   const netMap = new Map<string, PinRef[]>()
 
   for (const placed of state.placedComponents) {
     const def = state.componentLibrary.find(d => d.id === placed.defId)
     if (!def) continue
-    const autoName = (defCounts.get(placed.defId) ?? 0) > 1
-      ? `${def.name} #${placed.instanceNum}`
-      : def.name
-    const componentName = placed.label ?? autoName
+    const componentName = placed.label ?? def.name
     for (const pin of def.pins) {
       if (pin.name === '*') continue
       const hole = getComponentPinHole(placed, pin, def)

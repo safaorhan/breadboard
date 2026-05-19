@@ -54,9 +54,6 @@ export function renderLayersPanel(
 ): void {
   list.innerHTML = ''
 
-  const defCounts = new Map<string, number>()
-  for (const p of placedComponents) defCounts.set(p.defId, (defCounts.get(p.defId) ?? 0) + 1)
-
   if (placedComponents.length === 0) {
     const empty = document.createElement('li')
     empty.className  = 'layer-empty'
@@ -86,11 +83,7 @@ export function renderLayersPanel(
 
     const name = document.createElement('span')
     name.className   = 'layer-name'
-    const baseName   = def?.name ?? '?'
-    const autoName   = (defCounts.get(placed.defId) ?? 0) > 1
-      ? `${baseName} #${placed.instanceNum}`
-      : baseName
-    name.textContent = placed.label ?? autoName
+    name.textContent = placed.label ?? (def?.name ?? '?')
 
     const actions = document.createElement('div')
     actions.className = 'layer-actions'
