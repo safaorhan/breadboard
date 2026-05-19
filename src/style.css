@@ -120,38 +120,37 @@ body.projects-mode #topbar { display: flex; }
 
 /* ─── Panel section header ───────────────────────────────────────────────── */
 .panel-label {
-  padding: 10px 10px 4px;
-  font-size: 10px;
+  padding: 0 10px;
+  height: 40px;
+  font-size: 11px;
   font-weight: 600;
-  color: var(--text-3);
-  text-transform: uppercase;
-  letter-spacing: 0.1em;
+  color: var(--text-2);
   user-select: none;
   display: flex;
   align-items: center;
   gap: 5px;
+  flex-shrink: 0;
 }
 
 /* Collapsible section */
 .panel-label.collapsible {
   cursor: pointer;
-  padding: 7px 10px;
   border-radius: var(--r);
-  transition: background 0.1s;
 }
-.panel-label.collapsible:hover { background: var(--bg-hover); }
 
 .collapsible-chevron {
   display: inline-flex;
   align-items: center;
   flex-shrink: 0;
   color: var(--text-3);
-  transition: transform 0.15s;
-  transform: rotate(0deg);       /* open: pointing down */
+  opacity: 0;
+  transition: transform 0.15s, opacity 0.1s;
+  transform: rotate(0deg);
 }
-.panel-label.collapsible.collapsed .collapsible-chevron {
-  transform: rotate(-90deg);     /* closed: pointing right */
-}
+/* Show chevron on hover (open) or always when collapsed */
+.panel-label.collapsible:hover .collapsible-chevron,
+.panel-label.collapsible.collapsed .collapsible-chevron { opacity: 1; }
+.panel-label.collapsible.collapsed .collapsible-chevron { transform: rotate(-90deg); }
 
 /* ─── Resize handles ─────────────────────────────────────────────────────── */
 #sidebar-resize-handle,
