@@ -59,7 +59,7 @@ function scheduleBroadcastSave(projectId: string): void {
   broadcastSaveTimer = setTimeout(() => {
     broadcastSaveTimer = null
     syncChannel?.postMessage({ type: 'project-saved', projectId })
-  }, 1500)
+  }, 300)
 }
 
 function broadcastImmediate(type: string, projectId: string): void {
