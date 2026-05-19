@@ -228,7 +228,7 @@ body.projects-mode #topbar { display: flex; }
 /* Project name row */
 #sidebar-project-row {
   display: flex;
-  align-items: center;
+  align-items: stretch;
   justify-content: flex-start;
   padding: 2px 8px 6px;
   gap: 0;
@@ -248,7 +248,10 @@ body.projects-mode #topbar { display: flex; }
   transition: background 0.1s;
   overflow: hidden;
 }
-#project-name-btn:hover { background: var(--bg-hover); }
+
+/* Unified hover: hovering either button highlights both */
+#sidebar-project-row:hover #project-name-btn,
+#sidebar-project-row:hover #project-menu-btn { background: var(--bg-hover); }
 
 #project-name {
   font-size: 0.8125rem;
@@ -291,8 +294,8 @@ body.projects-mode #topbar { display: flex; }
   transition: opacity 0.1s, background 0.1s, color 0.1s;
 }
 #sidebar-project-row:hover #project-menu-btn { opacity: 1; }
-#project-menu-btn:hover { background: var(--bg-hover); color: var(--text-1); }
-#project-menu-btn.active { opacity: 1; color: var(--text-1); }
+#project-menu-btn.active { opacity: 1; }
+#sidebar-project-row:hover #project-menu-btn { color: var(--text-2); }
 
 .sidebar-divider {
   height: 1px;
