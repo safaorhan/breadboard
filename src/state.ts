@@ -416,8 +416,8 @@ export function setComponentLabel(id: string, label: string): void {
   notify()
 }
 
-export function addComponentDef(def: Omit<ComponentDef, 'id'>): void {
-  const newDef = { ...def, id: crypto.randomUUID() }
+export function addComponentDef(def: Omit<ComponentDef, 'id' | 'source'>): void {
+  const newDef: ComponentDef = { ...def, id: crypto.randomUUID(), source: 'user' }
   state.componentLibrary.push(newDef)
   saveComponentDef({ ...newDef, source: 'user' }).catch(() => {})
   notify()

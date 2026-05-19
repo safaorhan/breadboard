@@ -20,6 +20,7 @@ export interface ComponentDef {
   rowSpan:      number    // height in y-units (same scale as ROW_Y_UNITS)
   pins:         PinDef[]
   illustration?: ComponentIllustration
+  source?:      'system' | 'user'
 }
 
 export interface PlacedComponent {

@@ -733,6 +733,13 @@ function buildInsertGridItem(def: { id: string; name: string }): HTMLButtonEleme
   return btn
 }
 
+function makeInsertSectionHeader(text: string): HTMLDivElement {
+  const hdr = document.createElement('div')
+  hdr.className   = 'insert-section-header'
+  hdr.textContent = text
+  return hdr
+}
+
 function renderInsertGrid(): void {
   insertGrid.innerHTML = ''
   const q = insertSearch.value.trim().toLowerCase()
@@ -743,15 +750,26 @@ function renderInsertGrid(): void {
       const def = state.componentLibrary.find(d => d.id === id)
       if (def) insertGrid.appendChild(buildInsertGridItem(def))
     }
-  } else {
-    const matches = state.componentLibrary.filter(d => d.name.toLowerCase().includes(q))
-    for (const def of matches) insertGrid.appendChild(buildInsertGridItem(def))
-    if (matches.length === 0) {
-      const empty = document.createElement('div')
-      empty.className   = 'insert-grid-section'
-      empty.textContent = 'No results'
-      insertGrid.appendChild(empty)
-    }
+    return
+  }
+
+  const matches  = state.componentLibrary.filter(d => d.name.toLowerCase().includes(q))
+  const standard = matches.filter(d => d.source !== 'user')
+  const user     = matches.filter(d => d.source === 'user')
+
+  if (standard.length) {
+    insertGrid.appendChild(makeInsertSectionHeader('Standard Library'))
+    for (const def of standard) insertGrid.appendChild(buildInsertGridItem(def))
+  }
+  if (user.length) {
+    insertGrid.appendChild(makeInsertSectionHeader('User Library'))
+    for (const def of user) insertGrid.appendChild(buildInsertGridItem(def))
+  }
+  if (!matches.length) {
+    const empty = document.createElement('div')
+    empty.className   = 'insert-section-header'
+    empty.textContent = 'No results'
+    insertGrid.appendChild(empty)
   }
 }
 
@@ -787,12 +805,22 @@ insertSearchClear.addEventListener('click', () => {
   insertSearch.focus()
 })
 
+const insertCompSubmitBtn = insertCompForm.querySelector('button[type="submit"]') as HTMLButtonElement
+
+function updateInsertSubmitBtn(): void {
+  insertCompSubmitBtn.disabled = !insertCompName.value.trim() || !insertCompRowspan.value.trim()
+}
+
+insertCompName.addEventListener('input',    updateInsertSubmitBtn)
+insertCompRowspan.addEventListener('input', updateInsertSubmitBtn)
+
 function showInsertAddForm(): void {
   insertSearchView.style.display = 'none'
   insertAddView.style.display    = ''
   insertCompName.value    = ''
   insertCompRowspan.value = ''
   insertCompPins.value    = ''
+  updateInsertSubmitBtn()
   requestAnimationFrame(() => insertCompName.focus())
 }
 

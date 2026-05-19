@@ -1604,9 +1604,24 @@ body.projects-mode #projects-screen    { display: flex; }
   font-family: inherit;
   cursor: pointer;
   transition: opacity 0.1s;
-  align-self: flex-start;
+  align-self: flex-end;
 }
-#insert-comp-form button[type="submit"]:hover { opacity: 0.85; }
+#insert-comp-form button[type="submit"]:hover:not(:disabled) { opacity: 0.85; }
+#insert-comp-form button[type="submit"]:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+}
+
+/* Section headers in insert grid */
+.insert-section-header {
+  font-size: 10px;
+  font-weight: 600;
+  color: var(--text-3);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  padding: 8px 10px 3px;
+  user-select: none;
+}
 
 /* ─── Projects screen ────────────────────────────────────────────────────── */
 #projects-screen {
