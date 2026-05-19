@@ -249,9 +249,13 @@ body.projects-mode #topbar { display: flex; }
   overflow: hidden;
 }
 
-/* Unified hover: hovering either button highlights both */
+/* Sibling gets a faint bg when row is hovered */
 #sidebar-project-row:hover #project-name-btn,
-#sidebar-project-row:hover #project-menu-btn { background: var(--bg-hover); }
+#sidebar-project-row:hover #project-menu-btn { background: rgba(255,255,255,0.03); }
+
+/* The actually-hovered button gets the full bg (declared after, wins specificity tie) */
+#sidebar-project-row #project-name-btn:hover,
+#sidebar-project-row #project-menu-btn:hover { background: var(--bg-hover); }
 
 #project-name {
   font-size: 0.8125rem;
