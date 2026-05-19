@@ -215,7 +215,7 @@ body.projects-mode #topbar { display: flex; }
   align-items: center;
   gap: 2px;
   padding: 6px 7px;
-  background: var(--bg-3);
+  background: none;
   border: none;
   border-radius: 8px;
   cursor: pointer;
