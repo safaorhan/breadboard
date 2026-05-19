@@ -1,4 +1,4 @@
-import { state, onStateChange, initDB, setComponentColor, toggleComponentLock, toggleComponentVisibility, rotateComponent, removeComponent, removeWire, selectItem, getActiveProjectId, getActiveProjectName, updateThumbnail, openProject, createProject, deleteProjectById, getAllProjects, importProjectData, renameProjectById } from './state'
+import { state, onStateChange, initDB, setComponentColor, toggleComponentLock, toggleComponentVisibility, rotateComponent, removeComponent, removeWire, selectItem, getActiveProjectId, getActiveProjectName, renameProject, updateThumbnail, openProject, createProject, deleteProjectById, getAllProjects, importProjectData, renameProjectById } from './state'
 import type { BBFile } from './state'
 import type { Project } from './db'
 import { matchJumper, COPPER_COLOR } from './jumpers'
@@ -19,6 +19,8 @@ const wiresList        = document.getElementById('wires-list')          as HTMLU
 const componentsLabel  = document.getElementById('components-label')    as HTMLElement
 const wiresLabel       = document.getElementById('wires-label')         as HTMLElement
 const projectNameEl    = document.getElementById('project-name')        as HTMLSpanElement
+const projectNameBtn   = document.getElementById('project-name-btn')    as HTMLButtonElement
+const projectNameInput = document.getElementById('project-name-input')  as HTMLInputElement
 const projectsGrid     = document.getElementById('projects-grid')       as HTMLDivElement
 const newProjectBtn    = document.getElementById('new-project-btn')     as HTMLButtonElement
 const importProjectBtn = document.getElementById('import-project-btn')  as HTMLButtonElement
@@ -211,11 +213,37 @@ themeToggleBtn.addEventListener('click', () => {
   applyTheme(document.documentElement.dataset.theme === 'light' ? 'dark' : 'light')
 })
 
-// ── Project name ─────────────────────────────────────────────────────────
+// ── Project name (inline rename) + sidebar dropdown ───────────────────────
 
 function syncProjectName(): void {
-  projectNameEl.textContent = getActiveProjectName()
+  if (document.activeElement !== projectNameInput) {
+    projectNameEl.textContent = getActiveProjectName()
+  }
 }
+
+function commitProjectRename(): void {
+  const name = projectNameInput.value.trim() || 'Untitled'
+  renameProject(name)
+  projectNameEl.textContent = name
+  projectNameEl.style.display    = ''
+  projectNameInput.style.display = 'none'
+  projectNameInput.classList.remove('visible')
+}
+
+projectNameBtn.addEventListener('click', () => {
+  if (projectNameInput.classList.contains('visible')) return
+  projectNameInput.value = getActiveProjectName()
+  projectNameEl.style.display    = 'none'
+  projectNameInput.style.display = ''
+  projectNameInput.classList.add('visible')
+  projectNameInput.select()
+})
+
+projectNameInput.addEventListener('blur',    commitProjectRename)
+projectNameInput.addEventListener('keydown', (e) => {
+  if (e.key === 'Enter')  { e.preventDefault(); projectNameInput.blur() }
+  if (e.key === 'Escape') { projectNameInput.value = getActiveProjectName(); projectNameInput.blur() }
+})
 
 // ── Sidebar dropdown ──────────────────────────────────────────────────────
 
@@ -238,6 +266,7 @@ function showSidebarDropdown(
 
 function hideSidebarDropdown(): void {
   sidebarDropdown.classList.remove('visible')
+  projectMenuBtn.classList.remove('active')
 }
 
 logoMenuBtn.addEventListener('click', () => {
@@ -246,7 +275,12 @@ logoMenuBtn.addEventListener('click', () => {
   ])
 })
 
-projectMenuBtn.addEventListener('click', () => {
+projectMenuBtn.addEventListener('click', (e) => {
+  e.stopPropagation()
+  if (sidebarDropdown.classList.contains('visible')) {
+    hideSidebarDropdown(); return
+  }
+  projectMenuBtn.classList.add('active')
   showSidebarDropdown(projectMenuBtn, [
     { label: 'Export (.bb)', action: async () => {
       const all = await getAllProjects()

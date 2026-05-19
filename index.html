@@ -42,9 +42,8 @@
     <!-- Left: logo menu, project menu, placed components, wires -->
     <aside id="sidebar">
 
-      <!-- Sidebar top bar: logo button + project menu -->
+      <!-- Logo button: icon + chevron only -->
       <div id="sidebar-topbar">
-        <!-- Logo menu: icon + chevron only, no text -->
         <button id="logo-menu-btn" aria-label="Main menu" aria-haspopup="menu">
           <svg width="18" height="18" viewBox="0 0 18 18" fill="none" xmlns="http://www.w3.org/2000/svg" style="pointer-events:none;flex-shrink:0">
             <rect x="1" y="5" width="16" height="8" rx="1.5" fill="#e8f5ed" stroke="#2d8a50" stroke-width="1.2"/>
@@ -59,11 +58,16 @@
             <path fill="currentColor" d="M9.768 6.768a.5.5 0 0 1 .707.707l-2.12 2.121a.5.5 0 0 1-.708 0L5.525 7.475a.5.5 0 0 1 .708-.707l1.768 1.767z"/>
           </svg>
         </button>
+      </div>
 
-        <!-- Project name menu -->
-        <button id="project-menu-btn" class="sidebar-menu-btn">
-          <span id="project-name" class="sidebar-menu-label"></span>
-          <svg width="10" height="10" viewBox="0 0 16 16" fill="none" style="pointer-events:none;flex-shrink:0">
+      <!-- Project name row: click name to rename, click chevron for menu -->
+      <div id="sidebar-project-row">
+        <button id="project-name-btn" title="Click to rename">
+          <span id="project-name"></span>
+          <input id="project-name-input" type="text" spellcheck="false" autocomplete="off" maxlength="100" />
+        </button>
+        <button id="project-menu-btn" aria-label="Edit file menu" aria-haspopup="menu">
+          <svg width="14" height="14" viewBox="0 0 16 16" fill="none" style="pointer-events:none">
             <path fill="currentColor" d="M9.768 6.768a.5.5 0 0 1 .707.707l-2.12 2.121a.5.5 0 0 1-.708 0L5.525 7.475a.5.5 0 0 1 .708-.707l1.768 1.767z"/>
           </svg>
         </button>
