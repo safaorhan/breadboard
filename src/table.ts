@@ -23,20 +23,10 @@ export function renderTable(container: HTMLElement, state: AppState): typeof net
     return nets
   }
 
-  // Build defCounts so duplicate components show instance numbers
-  const defCounts = new Map<string, number>()
-  for (const p of state.placedComponents) {
-    defCounts.set(p.defId, (defCounts.get(p.defId) ?? 0) + 1)
-  }
-
   function toEndpoint(pin: PinRef): Endpoint {
     const placed   = state.placedComponents.find(c => c.id === pin.componentId)
     const colorIdx = placed?.colorIdx ?? 0
-    const isDup    = placed ? (defCounts.get(placed.defId) ?? 0) > 1 : false
-    const label    = isDup && placed
-      ? `${pin.componentName} #${placed.instanceNum}`
-      : pin.componentName
-    return { label, pinName: pin.pinName, colorIdx }
+    return { label: pin.componentName, pinName: pin.pinName, colorIdx }
   }
 
   // Count how many nets each component label appears in (for orientation)

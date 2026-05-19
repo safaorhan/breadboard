@@ -489,9 +489,10 @@ function renderPlacedComponent(
     nameLabel.setAttribute('text-anchor', 'middle')
     nameLabel.setAttribute('class', 'component-label')
     nameLabel.style.fill = color.stroke
-    nameLabel.textContent = (defCounts.get(placed.defId) ?? 0) > 1
+    const autoName = (defCounts.get(placed.defId) ?? 0) > 1
       ? `${def.name} #${placed.instanceNum}`
       : def.name
+    nameLabel.textContent = placed.label ?? autoName
     g.appendChild(nameLabel)
   }
 
