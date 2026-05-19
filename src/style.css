@@ -1210,16 +1210,25 @@ body.projects-mode #topbar { display: flex; }
 .wire:hover       { stroke-width: 3; }
 .wire.selected    { stroke-width: 2.5; }
 
+/* Option A — flowing dash sweep (inactive) */
 @keyframes wire-sweep {
   from { stroke-dashoffset: 14; }
   to   { stroke-dashoffset: 0; }
 }
-
-.wire.panel-hover {
-  stroke-width: 3.5;
-  stroke-dasharray: 8 6;
+/* .wire.panel-hover {
+  stroke-width: 3.5; stroke-dasharray: 8 6;
   animation: wire-sweep 0.35s linear infinite;
   filter: drop-shadow(0 0 4px rgba(255,255,255,0.4));
+} */
+
+/* Option B — breathing glow pulse (active) */
+@keyframes wire-glow {
+  0%, 100% { filter: drop-shadow(0 0 2px rgba(255,255,255,0.25)); stroke-width: 2.5; }
+  50%       { filter: drop-shadow(0 0 8px rgba(255,255,255,0.75)); stroke-width: 4; }
+}
+
+.wire.panel-hover {
+  animation: wire-glow 1.2s ease-in-out infinite;
 }
 
 .preview-wire { stroke-width: 1.5; stroke-dasharray: 4 3; pointer-events: none; opacity: 0.7; }
