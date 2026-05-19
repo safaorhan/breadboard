@@ -1221,14 +1221,24 @@ body.projects-mode #topbar { display: flex; }
   filter: drop-shadow(0 0 4px rgba(255,255,255,0.4));
 } */
 
-/* Option B — breathing glow pulse (active) */
+/* Option B — breathing glow pulse (inactive) */
 @keyframes wire-glow {
   0%, 100% { filter: drop-shadow(0 0 2px rgba(255,255,255,0.25)); stroke-width: 2.5; }
   50%       { filter: drop-shadow(0 0 8px rgba(255,255,255,0.75)); stroke-width: 4; }
 }
+/* .wire.panel-hover { animation: wire-glow 1.2s ease-in-out infinite; } */
+
+/* Option C — comet: single bright segment running along the wire (active) */
+@keyframes wire-comet {
+  from { stroke-dashoffset: 60; }
+  to   { stroke-dashoffset: 0; }
+}
 
 .wire.panel-hover {
-  animation: wire-glow 1.2s ease-in-out infinite;
+  stroke-width: 3.5;
+  stroke-dasharray: 14 46;
+  animation: wire-comet 0.7s linear infinite;
+  filter: drop-shadow(0 0 3px rgba(255,255,255,0.5));
 }
 
 .preview-wire { stroke-width: 1.5; stroke-dasharray: 4 3; pointer-events: none; opacity: 0.7; }
