@@ -241,34 +241,71 @@ projectNameInput.addEventListener('keydown', (e) => {
 
 // ── Thumbnail capture ─────────────────────────────────────────────────────
 
+// Collect all CSSStyleRules from the document so the serialized SVG
+// renders with the same visual styles as the live canvas.
+function collectDocumentStyles(): string {
+  const rules: string[] = []
+  for (const sheet of document.styleSheets) {
+    try {
+      for (const rule of sheet.cssRules) {
+        // Skip @font-face and @import — they cause CORS errors in blob URLs
+        if (rule instanceof CSSStyleRule) rules.push(rule.cssText)
+      }
+    } catch { /* cross-origin sheet */ }
+  }
+  return rules.join('\n')
+}
+
 async function captureAndSaveThumbnail(): Promise<void> {
   try {
-    const serializer = new XMLSerializer()
-    // Clone the SVG at its natural viewBox size (ignoring zoom)
     const clone = svg.cloneNode(true) as SVGSVGElement
     clone.setAttribute('width',  String(SVG_WIDTH))
     clone.setAttribute('height', String(SVG_HEIGHT))
-    const svgStr = serializer.serializeToString(clone)
+
+    // Embed document CSS so classes like .hole, .wire, .component-body render
+    const styleEl = document.createElementNS('http://www.w3.org/2000/svg', 'style')
+    styleEl.textContent = collectDocumentStyles()
+    clone.insertBefore(styleEl, clone.firstChild)
+
+    // Hide hover-label overlays in the thumbnail
+    const hoverGroup = clone.getElementById('hover-labels')
+    if (hoverGroup) hoverGroup.setAttribute('visibility', 'hidden')
+
+    const svgStr = new XMLSerializer().serializeToString(clone)
     const blob   = new Blob([svgStr], { type: 'image/svg+xml' })
     const url    = URL.createObjectURL(blob)
 
     await new Promise<void>((resolve) => {
-      const img   = new Image()
+      const img     = new Image()
       const THUMB_W = 480
       const THUMB_H = Math.round(SVG_HEIGHT * (THUMB_W / SVG_WIDTH))
       img.onload = () => {
         const canvas = document.createElement('canvas')
         canvas.width  = THUMB_W
         canvas.height = THUMB_H
-        canvas.getContext('2d')!.drawImage(img, 0, 0, THUMB_W, THUMB_H)
+        const ctx = canvas.getContext('2d')!
+        // Fill with the board background before drawing so semi-transparent
+        // SVG fills (board trench, rail overlays) composite correctly.
+        ctx.fillStyle = '#faf8f4'
+        ctx.fillRect(0, 0, THUMB_W, THUMB_H)
+        ctx.drawImage(img, 0, 0, THUMB_W, THUMB_H)
         URL.revokeObjectURL(url)
-        updateThumbnail(canvas.toDataURL('image/jpeg', 0.75))
+        updateThumbnail(canvas.toDataURL('image/jpeg', 0.8))
         resolve()
       }
       img.onerror = () => { URL.revokeObjectURL(url); resolve() }
       img.src = url
     })
   } catch { /* ignore — thumbnail is optional */ }
+}
+
+let thumbnailTimer: ReturnType<typeof setTimeout> | null = null
+function scheduleThumbnail(): void {
+  if (thumbnailTimer) clearTimeout(thumbnailTimer)
+  thumbnailTimer = setTimeout(() => {
+    thumbnailTimer = null
+    captureAndSaveThumbnail()
+  }, 5000)
 }
 
 // ── Projects screen ───────────────────────────────────────────────────────
@@ -931,7 +968,7 @@ function fitToScreen(): void {
 }
 
 initDB().then(() => {
-  onStateChange(() => { update(); syncProjectName() })
+  onStateChange(() => { update(); syncProjectName(); scheduleThumbnail() })
   update()
   syncProjectName()
   requestAnimationFrame(() => fitToScreen())
