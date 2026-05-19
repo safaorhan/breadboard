@@ -1379,8 +1379,8 @@ body.projects-mode #projects-screen       { display: flex; }
   bottom: 76px;   /* action-bar height + gap */
   left: 50%;
   transform: translateX(-50%);
-  width: 340px;
-  max-height: 380px;
+  width: 400px;
+  height: 300px;
   background: var(--bg-2);
   border: 1px solid var(--border-2);
   border-radius: 8px;

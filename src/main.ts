@@ -736,22 +736,9 @@ function renderInsertGrid(): void {
 
   if (!q) {
     const recentIds = getRecentDefIds()
-    if (recentIds.length > 0) {
-      const hdr = document.createElement('div')
-      hdr.className   = 'insert-grid-section'
-      hdr.textContent = 'Recents'
-      insertGrid.appendChild(hdr)
-      for (const id of recentIds) {
-        const def = state.componentLibrary.find(d => d.id === id)
-        if (def) insertGrid.appendChild(buildInsertGridItem(def))
-      }
-    }
-    const allHdr = document.createElement('div')
-    allHdr.className   = 'insert-grid-section'
-    allHdr.textContent = 'All components'
-    insertGrid.appendChild(allHdr)
-    for (const def of state.componentLibrary) {
-      insertGrid.appendChild(buildInsertGridItem(def))
+    for (const id of recentIds) {
+      const def = state.componentLibrary.find(d => d.id === id)
+      if (def) insertGrid.appendChild(buildInsertGridItem(def))
     }
   } else {
     const matches = state.componentLibrary.filter(d => d.name.toLowerCase().includes(q))
