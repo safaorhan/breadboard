@@ -429,3 +429,27 @@ export function selectItem(id: string | null, type: 'component' | 'wire' | null)
   state.selectedType = type
   notify()
 }
+
+export interface BBFile {
+  version:           number
+  name:              string
+  createdAt:         number
+  placedComponents:  PlacedComponent[]
+  wires:             { id: string; from: string; to: string }[]
+  activeJumperSetId: string | null
+}
+
+export async function importProjectData(data: BBFile): Promise<string> {
+  const now: number = Date.now()
+  const project: Project = {
+    id:                crypto.randomUUID(),
+    name:              data.name || 'Imported',
+    createdAt:         data.createdAt || now,
+    updatedAt:         now,
+    placedComponents:  data.placedComponents,
+    wires:             data.wires,
+    activeJumperSetId: data.activeJumperSetId ?? null,
+  }
+  await saveProject(project)
+  return project.id
+}

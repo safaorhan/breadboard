@@ -1,4 +1,5 @@
-import { state, onStateChange, initDB, addComponentDef, updateComponentDef, removeComponentDef, setComponentColor, toggleComponentLock, toggleComponentVisibility, rotateComponent, removeComponent, removeWire, addJumperDef, removeJumperDef, updateJumperDef, setActiveJumperSet, selectItem, getActiveProjectId, getActiveProjectName, renameProject, renameProjectById, updateThumbnail, openProject, createProject, deleteProjectById, getAllProjects } from './state'
+import { state, onStateChange, initDB, addComponentDef, updateComponentDef, removeComponentDef, setComponentColor, toggleComponentLock, toggleComponentVisibility, rotateComponent, removeComponent, removeWire, addJumperDef, removeJumperDef, updateJumperDef, setActiveJumperSet, selectItem, getActiveProjectId, getActiveProjectName, renameProject, renameProjectById, updateThumbnail, openProject, createProject, deleteProjectById, getAllProjects, importProjectData } from './state'
+import type { BBFile } from './state'
 import type { Project } from './db'
 import { matchJumper, COPPER_COLOR } from './jumpers'
 import { COMPONENT_COLORS, getColor } from './colors'
@@ -21,8 +22,9 @@ const wiresLabel       = document.getElementById('wires-label')       as HTMLEle
 const projectNameEl    = document.getElementById('project-name')      as HTMLSpanElement
 const projectNameInput = document.getElementById('project-name-input') as HTMLInputElement
 const projectsGrid     = document.getElementById('projects-grid')     as HTMLDivElement
-const newProjectBtn    = document.getElementById('new-project-btn')   as HTMLButtonElement
-const appLogoEl        = document.getElementById('app-logo')          as HTMLDivElement
+const newProjectBtn    = document.getElementById('new-project-btn')    as HTMLButtonElement
+const importProjectBtn = document.getElementById('import-project-btn') as HTMLButtonElement
+const appLogoEl        = document.getElementById('app-logo')           as HTMLDivElement
 
 function makeCollapsible(label: HTMLElement, content: HTMLElement): void {
   label.classList.add('collapsible')
@@ -308,6 +310,67 @@ function scheduleThumbnail(): void {
   }, 5000)
 }
 
+// ── Import / export ───────────────────────────────────────────────────────
+
+function exportProject(project: Project): void {
+  const data: BBFile = {
+    version:           1,
+    name:              project.name,
+    createdAt:         project.createdAt,
+    placedComponents:  project.placedComponents,
+    wires:             project.wires,
+    activeJumperSetId: project.activeJumperSetId ?? null,
+  }
+  const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' })
+  const url  = URL.createObjectURL(blob)
+  const a    = document.createElement('a')
+  a.href     = url
+  a.download = `${project.name.replace(/[^a-z0-9_-]/gi, '_') || 'project'}.bb`
+  document.body.appendChild(a)
+  a.click()
+  document.body.removeChild(a)
+  URL.revokeObjectURL(url)
+}
+
+async function importProject(): Promise<void> {
+  const input    = document.createElement('input')
+  input.type     = 'file'
+  input.accept   = '.bb'
+  await new Promise<void>(resolve => {
+    input.addEventListener('change', async () => {
+      const file = input.files?.[0]
+      if (!file) { resolve(); return }
+      if (!file.name.endsWith('.bb')) {
+        alert('Please select a .bb file.')
+        resolve(); return
+      }
+      if (file.size > 5 * 1024 * 1024) {
+        alert('File is too large (max 5 MB).')
+        resolve(); return
+      }
+      let data: unknown
+      try { data = JSON.parse(await file.text()) } catch {
+        alert('File is not valid JSON.')
+        resolve(); return
+      }
+      if (
+        typeof data !== 'object' || data === null ||
+        (data as Record<string, unknown>).version !== 1 ||
+        !Array.isArray((data as Record<string, unknown>).placedComponents) ||
+        !Array.isArray((data as Record<string, unknown>).wires)
+      ) {
+        alert('File is not a valid Breadboard project.')
+        resolve(); return
+      }
+      const id = await importProjectData(data as BBFile)
+      await openProject(id)
+      showCanvasScreen()
+      resolve()
+    })
+    input.click()
+  })
+}
+
 // ── Projects screen ───────────────────────────────────────────────────────
 
 function formatRelativeDate(ts: number): string {
@@ -326,8 +389,9 @@ function formatRelativeDate(ts: number): string {
   }).format(new Date(ts))
 }
 
-const PENCIL_SVG = `<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="pointer-events:none"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 013 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>`
-const TRASH_SVG  = `<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="pointer-events:none"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6M14 11v6"/><path d="M9 6V4h6v2"/></svg>`
+const PENCIL_SVG   = `<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="pointer-events:none"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 013 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>`
+const TRASH_SVG    = `<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="pointer-events:none"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6M14 11v6"/><path d="M9 6V4h6v2"/></svg>`
+const DOWNLOAD_SVG = `<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="pointer-events:none"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>`
 
 async function renderProjectsScreen(): Promise<void> {
   const projects = (await getAllProjects()).sort((a, b) => b.updatedAt - a.updatedAt)
@@ -420,6 +484,15 @@ function buildProjectCard(project: Project): HTMLDivElement {
     nameInput.select()
   })
 
+  const exportBtn = document.createElement('button')
+  exportBtn.className = 'project-card-btn'
+  exportBtn.title     = 'Export (.bb)'
+  exportBtn.innerHTML = DOWNLOAD_SVG
+  exportBtn.addEventListener('click', (e) => {
+    e.stopPropagation()
+    exportProject(project)
+  })
+
   const deleteBtn = document.createElement('button')
   deleteBtn.className = 'project-card-btn danger'
   deleteBtn.title     = 'Delete'
@@ -432,6 +505,7 @@ function buildProjectCard(project: Project): HTMLDivElement {
   })
 
   actions.appendChild(renameBtn)
+  actions.appendChild(exportBtn)
   actions.appendChild(deleteBtn)
   card.appendChild(actions)
 
@@ -487,6 +561,8 @@ newProjectBtn.addEventListener('click', async () => {
   await openProject(id)
   showCanvasScreen()
 })
+
+importProjectBtn.addEventListener('click', () => { importProject() })
 
 sidebarHandle.addEventListener('mousedown', (e) => startResize('left',  e, sidebarHandle, sidebarEl))
 layersHandle.addEventListener('mousedown',  (e) => startResize('right', e, layersHandle,  layersPanelEl))

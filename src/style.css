@@ -1122,10 +1122,28 @@ body {
 }
 #new-project-btn:hover { opacity: 0.85; }
 
+/* Import project button */
+#import-project-btn {
+  display: none;
+  background: transparent;
+  color: var(--text-2);
+  border: 1px solid var(--border-2);
+  border-radius: var(--r);
+  padding: 5px 12px;
+  font-size: 11px;
+  font-weight: 500;
+  font-family: inherit;
+  cursor: pointer;
+  transition: color 0.1s, border-color 0.1s;
+  white-space: nowrap;
+}
+#import-project-btn:hover { color: var(--text-1); border-color: var(--border-2); }
+
 /* Canvas mode hides projects-only elements; projects mode hides canvas-only elements */
 body.projects-mode #projects-topbar-title { display: block; }
 body.projects-mode #project-name-wrap     { display: none; }
 body.projects-mode #new-project-btn       { display: block; }
+body.projects-mode #import-project-btn    { display: block; }
 body.projects-mode #new-project-sep       { display: none; }
 body.projects-mode #zoom-sep              { display: none; }
 body.projects-mode #zoom-out              { display: none; }
