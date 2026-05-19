@@ -120,7 +120,7 @@ body.projects-mode #topbar { display: flex; }
 
 /* ─── Panel section header ───────────────────────────────────────────────── */
 .panel-label {
-  padding: 0 10px;
+  padding: 0 10px 0 16px;
   height: 40px;
   font-size: 11px;
   font-weight: 600;
@@ -130,6 +130,7 @@ body.projects-mode #topbar { display: flex; }
   align-items: center;
   gap: 5px;
   flex-shrink: 0;
+  position: relative;
 }
 
 /* Collapsible section */
@@ -138,19 +139,24 @@ body.projects-mode #topbar { display: flex; }
   border-radius: var(--r);
 }
 
+/* Chevron hangs to the left of the 16px alignment column */
 .collapsible-chevron {
+  position: absolute;
+  left: 4px;
+  top: 50%;
   display: inline-flex;
   align-items: center;
-  flex-shrink: 0;
   color: var(--text-3);
   opacity: 0;
   transition: transform 0.15s, opacity 0.1s;
-  transform: rotate(0deg);
+  transform: translateY(-50%) rotate(0deg);
 }
-/* Show chevron on hover (open) or always when collapsed */
+/* Visible on hover (open) or always when collapsed */
 .panel-label.collapsible:hover .collapsible-chevron,
 .panel-label.collapsible.collapsed .collapsible-chevron { opacity: 1; }
-.panel-label.collapsible.collapsed .collapsible-chevron { transform: rotate(-90deg); }
+.panel-label.collapsible.collapsed .collapsible-chevron {
+  transform: translateY(-50%) rotate(-90deg);
+}
 
 /* ─── Resize handles ─────────────────────────────────────────────────────── */
 #sidebar-resize-handle,
@@ -210,7 +216,7 @@ body.projects-mode #topbar { display: flex; }
   display: inline-flex;
   align-items: center;
   gap: 2px;
-  padding: 6px 7px 6px 6px;
+  padding: 6px 7px 6px 8px;
   background: none;
   border: none;
   border-radius: 5px;
@@ -235,7 +241,7 @@ body.projects-mode #topbar { display: flex; }
   display: flex;
   align-items: center;
   max-width: calc(100% - 32px);
-  padding: 4px 6px;
+  padding: 4px 8px;
   background: none;
   border: none;
   border-radius: 5px 0 0 5px;
@@ -942,7 +948,7 @@ body.projects-mode #topbar { display: flex; }
   display: flex;
   align-items: center;
   gap: 6px;
-  padding: 0 2px 0 6px;
+  padding: 0 2px 0 10px;
   border-radius: var(--r);
   cursor: pointer;
   min-height: 28px;
@@ -1023,7 +1029,7 @@ body.projects-mode #topbar { display: flex; }
   display: flex;
   align-items: center;
   gap: 4px;
-  padding: 4px 2px 4px 6px;
+  padding: 4px 2px 4px 10px;
   border-radius: var(--r);
   cursor: pointer;
   min-height: 26px;
