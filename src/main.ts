@@ -1,4 +1,5 @@
-import { state, onStateChange, initDB, addComponentDef, updateComponentDef, removeComponentDef, setComponentColor, toggleComponentLock, toggleComponentVisibility, rotateComponent, removeComponent, removeWire, addJumperDef, removeJumperDef, updateJumperDef, setActiveJumperSet, selectItem } from './state'
+import { state, onStateChange, initDB, addComponentDef, updateComponentDef, removeComponentDef, setComponentColor, toggleComponentLock, toggleComponentVisibility, rotateComponent, removeComponent, removeWire, addJumperDef, removeJumperDef, updateJumperDef, setActiveJumperSet, selectItem, getActiveProjectId, getActiveProjectName, renameProject, renameProjectById, updateThumbnail, openProject, createProject, deleteProjectById, getAllProjects } from './state'
+import type { Project } from './db'
 import { matchJumper, COPPER_COLOR } from './jumpers'
 import { COMPONENT_COLORS, getColor } from './colors'
 import { initSVG, render, renderSidebar } from './render'
@@ -17,6 +18,11 @@ const layersList       = document.getElementById('layers-list')       as HTMLULi
 const wiresList        = document.getElementById('wires-list')        as HTMLUListElement
 const componentsLabel  = document.getElementById('components-label')  as HTMLElement
 const wiresLabel       = document.getElementById('wires-label')       as HTMLElement
+const projectNameEl    = document.getElementById('project-name')      as HTMLSpanElement
+const projectNameInput = document.getElementById('project-name-input') as HTMLInputElement
+const projectsGrid     = document.getElementById('projects-grid')     as HTMLDivElement
+const newProjectBtn    = document.getElementById('new-project-btn')   as HTMLButtonElement
+const appLogoEl        = document.getElementById('app-logo')          as HTMLDivElement
 
 function makeCollapsible(label: HTMLElement, content: HTMLElement): void {
   label.classList.add('collapsible')
@@ -200,6 +206,249 @@ function applyTheme(theme: 'dark' | 'light'): void {
 
 themeToggleBtn.addEventListener('click', () => {
   applyTheme(document.documentElement.dataset.theme === 'light' ? 'dark' : 'light')
+})
+
+// ── Project name (inline rename) ─────────────────────────────────────────
+
+function syncProjectName(): void {
+  if (document.activeElement !== projectNameInput) {
+    projectNameEl.textContent = getActiveProjectName()
+  }
+}
+
+projectNameEl.addEventListener('click', () => {
+  projectNameInput.value = getActiveProjectName()
+  projectNameEl.style.display    = 'none'
+  projectNameInput.style.display = 'block'
+  projectNameInput.classList.add('visible')
+  projectNameInput.select()
+})
+
+function commitRename(): void {
+  const name = projectNameInput.value.trim() || 'Untitled'
+  renameProject(name)
+  projectNameEl.textContent      = name
+  projectNameEl.style.display    = ''
+  projectNameInput.style.display = 'none'
+  projectNameInput.classList.remove('visible')
+}
+
+projectNameInput.addEventListener('blur',    commitRename)
+projectNameInput.addEventListener('keydown', (e) => {
+  if (e.key === 'Enter')  { e.preventDefault(); projectNameInput.blur() }
+  if (e.key === 'Escape') { projectNameInput.value = getActiveProjectName(); projectNameInput.blur() }
+})
+
+// ── Thumbnail capture ─────────────────────────────────────────────────────
+
+async function captureAndSaveThumbnail(): Promise<void> {
+  try {
+    const serializer = new XMLSerializer()
+    // Clone the SVG at its natural viewBox size (ignoring zoom)
+    const clone = svg.cloneNode(true) as SVGSVGElement
+    clone.setAttribute('width',  String(SVG_WIDTH))
+    clone.setAttribute('height', String(SVG_HEIGHT))
+    const svgStr = serializer.serializeToString(clone)
+    const blob   = new Blob([svgStr], { type: 'image/svg+xml' })
+    const url    = URL.createObjectURL(blob)
+
+    await new Promise<void>((resolve) => {
+      const img   = new Image()
+      const THUMB_W = 480
+      const THUMB_H = Math.round(SVG_HEIGHT * (THUMB_W / SVG_WIDTH))
+      img.onload = () => {
+        const canvas = document.createElement('canvas')
+        canvas.width  = THUMB_W
+        canvas.height = THUMB_H
+        canvas.getContext('2d')!.drawImage(img, 0, 0, THUMB_W, THUMB_H)
+        URL.revokeObjectURL(url)
+        updateThumbnail(canvas.toDataURL('image/jpeg', 0.75))
+        resolve()
+      }
+      img.onerror = () => { URL.revokeObjectURL(url); resolve() }
+      img.src = url
+    })
+  } catch { /* ignore — thumbnail is optional */ }
+}
+
+// ── Projects screen ───────────────────────────────────────────────────────
+
+function formatRelativeDate(ts: number): string {
+  const diff  = Date.now() - ts
+  const mins  = Math.floor(diff / 60000)
+  const hours = Math.floor(diff / 3600000)
+  const days  = Math.floor(diff / 86400000)
+  if (mins  <  1) return 'Just now'
+  if (mins  < 60) return `${mins}m ago`
+  if (hours < 24) return `${hours}h ago`
+  if (days  === 1) return 'Yesterday'
+  if (days  <  7) return `${days} days ago`
+  return new Intl.DateTimeFormat('en', {
+    month: 'short', day: 'numeric',
+    year:  days > 365 ? 'numeric' : undefined,
+  }).format(new Date(ts))
+}
+
+const PENCIL_SVG = `<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="pointer-events:none"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 013 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>`
+const TRASH_SVG  = `<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="pointer-events:none"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6M14 11v6"/><path d="M9 6V4h6v2"/></svg>`
+
+async function renderProjectsScreen(): Promise<void> {
+  const projects = (await getAllProjects()).sort((a, b) => b.updatedAt - a.updatedAt)
+  projectsGrid.innerHTML = ''
+
+  // "New project" card
+  const newCard = document.createElement('div')
+  newCard.className = 'project-card project-card-new'
+  newCard.innerHTML = `
+    <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round">
+      <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
+    </svg>
+    <span>New project</span>`
+  newCard.addEventListener('click', async () => {
+    const id = await createProject()
+    await openProject(id)
+    showCanvasScreen()
+  })
+  projectsGrid.appendChild(newCard)
+
+  for (const project of projects) {
+    const card = buildProjectCard(project)
+    projectsGrid.appendChild(card)
+  }
+}
+
+function buildProjectCard(project: Project): HTMLDivElement {
+  const card = document.createElement('div')
+  card.className = 'project-card'
+
+  // Thumbnail
+  const thumb = document.createElement('div')
+  thumb.className = 'project-card-thumb'
+  if (project.thumbnail) {
+    const img = document.createElement('img')
+    img.src = project.thumbnail
+    img.alt = project.name
+    thumb.appendChild(img)
+  } else {
+    const ph = document.createElement('svg')
+    ph.setAttribute('width', '48')
+    ph.setAttribute('height', '48')
+    ph.setAttribute('viewBox', '0 0 18 18')
+    ph.setAttribute('fill', 'none')
+    ph.classList.add('project-card-thumb-placeholder')
+    ph.innerHTML = `<rect x="1" y="5" width="16" height="8" rx="1.5" fill="currentColor" opacity="0.3"/>
+      <circle cx="4" cy="9" r="1.4" fill="currentColor"/><circle cx="7" cy="9" r="1.4" fill="currentColor"/>
+      <circle cx="10" cy="9" r="1.4" fill="currentColor"/><circle cx="13" cy="9" r="1.4" fill="currentColor"/>`
+    thumb.appendChild(ph)
+  }
+  card.appendChild(thumb)
+
+  // Info
+  const info = document.createElement('div')
+  info.className = 'project-card-info'
+
+  const nameEl = document.createElement('div')
+  nameEl.className   = 'project-card-name'
+  nameEl.textContent = project.name
+
+  const nameInput = document.createElement('input')
+  nameInput.type        = 'text'
+  nameInput.className   = 'project-card-name-input'
+  nameInput.spellcheck  = false
+  nameInput.autocomplete = 'off'
+
+  const dateEl = document.createElement('div')
+  dateEl.className   = 'project-card-date'
+  dateEl.textContent = formatRelativeDate(project.updatedAt)
+
+  info.appendChild(nameEl)
+  info.appendChild(nameInput)
+  info.appendChild(dateEl)
+  card.appendChild(info)
+
+  // Action buttons
+  const actions = document.createElement('div')
+  actions.className = 'project-card-actions'
+
+  const renameBtn = document.createElement('button')
+  renameBtn.className = 'project-card-btn'
+  renameBtn.title     = 'Rename'
+  renameBtn.innerHTML = PENCIL_SVG
+  renameBtn.addEventListener('click', (e) => {
+    e.stopPropagation()
+    nameEl.style.display    = 'none'
+    nameInput.value         = project.name
+    nameInput.classList.add('visible')
+    nameInput.focus()
+    nameInput.select()
+  })
+
+  const deleteBtn = document.createElement('button')
+  deleteBtn.className = 'project-card-btn danger'
+  deleteBtn.title     = 'Delete'
+  deleteBtn.innerHTML = TRASH_SVG
+  deleteBtn.addEventListener('click', async (e) => {
+    e.stopPropagation()
+    if (!confirm(`Delete "${project.name}"? This cannot be undone.`)) return
+    await deleteProjectById(project.id)
+    card.remove()
+  })
+
+  actions.appendChild(renameBtn)
+  actions.appendChild(deleteBtn)
+  card.appendChild(actions)
+
+  // Inline rename handlers
+  const commitCardRename = async () => {
+    const newName = nameInput.value.trim() || 'Untitled'
+    project.name          = newName
+    nameEl.textContent    = newName
+    nameEl.style.display  = ''
+    nameInput.classList.remove('visible')
+    await renameProjectById(project.id, newName)
+    if (project.id === getActiveProjectId()) projectNameEl.textContent = newName
+  }
+
+  nameInput.addEventListener('blur',    commitCardRename)
+  nameInput.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter')  { e.preventDefault(); nameInput.blur() }
+    if (e.key === 'Escape') { nameInput.value = project.name; nameInput.blur() }
+  })
+
+  // Click card body to open
+  card.addEventListener('click', async () => {
+    if (nameInput.classList.contains('visible')) return
+    await openProject(project.id)
+    showCanvasScreen()
+  })
+
+  return card
+}
+
+async function showProjectsScreen(): Promise<void> {
+  await captureAndSaveThumbnail()
+  document.body.classList.add('projects-mode')
+  await renderProjectsScreen()
+}
+
+function showCanvasScreen(): void {
+  document.body.classList.remove('projects-mode')
+  syncProjectName()
+  update()
+}
+
+appLogoEl.addEventListener('click', () => {
+  if (document.body.classList.contains('projects-mode')) {
+    showCanvasScreen()
+  } else {
+    showProjectsScreen()
+  }
+})
+
+newProjectBtn.addEventListener('click', async () => {
+  const id = await createProject()
+  await openProject(id)
+  showCanvasScreen()
 })
 
 sidebarHandle.addEventListener('mousedown', (e) => startResize('left',  e, sidebarHandle, sidebarEl))
@@ -682,8 +931,9 @@ function fitToScreen(): void {
 }
 
 initDB().then(() => {
-  onStateChange(update)
+  onStateChange(() => { update(); syncProjectName() })
   update()
+  syncProjectName()
   requestAnimationFrame(() => fitToScreen())
 })
 

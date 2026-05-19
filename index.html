@@ -2,8 +2,8 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <script>if(localStorage.getItem('breadboard-theme')==='light')document.documentElement.dataset.theme='light'</script>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Breadboard</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -14,8 +14,8 @@
 
   <!-- ── Top bar ──────────────────────────────────────────────────────── -->
   <header id="topbar">
-    <div id="app-logo">
-      <svg width="18" height="18" viewBox="0 0 18 18" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <div id="app-logo" title="All Projects">
+      <svg width="18" height="18" viewBox="0 0 18 18" fill="none" xmlns="http://www.w3.org/2000/svg" style="pointer-events:none">
         <rect x="1" y="5" width="16" height="8" rx="1.5" fill="#e8f5ed" stroke="#2d8a50" stroke-width="1.2"/>
         <circle cx="4"  cy="9" r="1.4" fill="#8a8478"/>
         <circle cx="7"  cy="9" r="1.4" fill="#8a8478"/>
@@ -27,23 +27,33 @@
       <span id="app-name">Breadboard</span>
     </div>
 
+    <!-- Shown in projects mode only -->
+    <span id="projects-topbar-title">All Projects</span>
+
     <div id="topbar-center">
-      <div id="draw-tools">
+      <!-- Shown in canvas mode only -->
+      <div id="project-name-wrap">
+        <span id="project-name"></span>
+        <input id="project-name-input" type="text" spellcheck="false" autocomplete="off" />
       </div>
     </div>
 
     <div id="topbar-right">
+      <!-- Shown in projects mode only -->
+      <button id="new-project-btn">+ New project</button>
+      <div class="topbar-sep" id="new-project-sep"></div>
+
       <button class="zoom-btn" id="theme-toggle" title="Toggle light/dark mode">
-        <!-- shown in dark mode → click to go light -->
         <svg class="icon-sun" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" style="pointer-events:none">
           <circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M2 12h2M20 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/>
         </svg>
-        <!-- shown in light mode → click to go dark -->
         <svg class="icon-moon" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" style="pointer-events:none">
           <path d="M21 12.79A9 9 0 1111.21 3 7 7 0 0021 12.79z"/>
         </svg>
       </button>
-      <div style="width:1px;height:16px;background:var(--border-2);margin:0 4px;flex-shrink:0"></div>
+
+      <!-- Shown in canvas mode only -->
+      <div class="topbar-sep" id="zoom-sep"></div>
       <button class="zoom-btn" id="zoom-out" title="Zoom out (−)">−</button>
       <span id="zoom-label" title="Reset zoom">100%</span>
       <button class="zoom-btn" id="zoom-in"  title="Zoom in (+)">+</button>
@@ -55,7 +65,7 @@
     </div>
   </header>
 
-  <!-- ── App shell ────────────────────────────────────────────────────── -->
+  <!-- ── Canvas app shell ──────────────────────────────────────────────── -->
   <div id="app">
 
     <!-- Left: library + add component form -->
@@ -145,7 +155,12 @@
 
   </div>
 
-  <!-- Context menu -->
+  <!-- ── Projects screen ───────────────────────────────────────────────── -->
+  <div id="projects-screen" style="display:none">
+    <div id="projects-grid"></div>
+  </div>
+
+  <!-- Shared overlays -->
   <div id="context-menu">
     <ul>
       <li id="ctx-rotate">Rotate</li>

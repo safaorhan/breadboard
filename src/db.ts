@@ -13,6 +13,7 @@ export interface Project {
   placedComponents:  PlacedComponent[]
   wires:             Wire[]
   activeJumperSetId: string | null
+  thumbnail?:        string   // JPEG data URL, generated on canvas capture
 }
 
 export interface StoredComponentDef extends ComponentDef {
@@ -47,7 +48,6 @@ function openDB(): Promise<void> {
       }
 
       if (oldVersion < 2) {
-        // Replace per-jumper store with per-set store
         if (db.objectStoreNames.contains('jumperDefs'))
           db.deleteObjectStore('jumperDefs')
         if (!db.objectStoreNames.contains('jumperSets'))
@@ -80,9 +80,19 @@ export async function saveProject(project: Project): Promise<void> {
   await idbReq(store.put({ ...project, updatedAt: Date.now() }))
 }
 
-async function loadProject(id: string): Promise<Project | null> {
+export async function loadProject(id: string): Promise<Project | null> {
   const store = _db!.transaction('projects', 'readonly').objectStore('projects')
   return (await idbReq(store.get(id))) ?? null
+}
+
+export async function loadAllProjects(): Promise<Project[]> {
+  const store = _db!.transaction('projects', 'readonly').objectStore('projects')
+  return idbReq(store.getAll())
+}
+
+export async function deleteProject(id: string): Promise<void> {
+  const store = _db!.transaction('projects', 'readwrite').objectStore('projects')
+  await idbReq(store.delete(id))
 }
 
 // ── Component defs ────────────────────────────────────────────────────────────
@@ -122,14 +132,12 @@ async function loadAllJumperSets(): Promise<StoredJumperSet[]> {
 // ── First-run seeding ─────────────────────────────────────────────────────────
 
 async function seedSystemDefs(): Promise<void> {
-  // Purge stale system records before inserting so renamed/removed presets don't linger
   for (const def of await loadAllComponentDefs()) {
     if (def.source === 'system') await deleteComponentDef(def.id)
   }
   for (const def of PRESET_LIBRARY) {
     await saveComponentDef({ ...def, source: 'system' })
   }
-
   for (const set of await loadAllJumperSets()) {
     if (set.source === 'system') await deleteJumperSet(set.id)
   }
@@ -148,16 +156,10 @@ async function migrateFromLocalStorage(): Promise<string | null> {
     if (!raw) return null
     const data = JSON.parse(raw)
 
-    // If the old data had user-defined jumpers, wrap them in a user jumper set
     let activeJumperSetId: string | null = null
     if (Array.isArray(data.jumperLibrary) && data.jumperLibrary.length > 0) {
       const setId = crypto.randomUUID()
-      await saveJumperSet({
-        id:      setId,
-        name:    'My Jumpers',
-        jumpers: data.jumperLibrary,
-        source:  'user',
-      })
+      await saveJumperSet({ id: setId, name: 'My Jumpers', jumpers: data.jumperLibrary, source: 'user' })
       activeJumperSetId = setId
     }
 
@@ -173,13 +175,10 @@ async function migrateFromLocalStorage(): Promise<string | null> {
       activeJumperSetId,
     })
 
-    // Only migrate user-created component defs (system presets are already seeded)
     const presetIds = new Set(PRESET_LIBRARY.map(d => d.id))
     if (Array.isArray(data.componentLibrary)) {
       for (const def of data.componentLibrary) {
-        if (!presetIds.has(def.id)) {
-          await saveComponentDef({ ...def, source: 'user' })
-        }
+        if (!presetIds.has(def.id)) await saveComponentDef({ ...def, source: 'user' })
       }
     }
 
@@ -193,48 +192,37 @@ async function migrateFromLocalStorage(): Promise<string | null> {
 // ── Public init ───────────────────────────────────────────────────────────────
 
 export interface DBInitResult {
-  activeProjectId: string
-  project:         Project
-  componentDefs:   StoredComponentDef[]
-  jumperSets:      StoredJumperSet[]
+  allProjects:   Project[]
+  componentDefs: StoredComponentDef[]
+  jumperSets:    StoredJumperSet[]
 }
 
 export async function initializeDB(): Promise<DBInitResult> {
   await openDB()
 
-  // Re-seed system defs whenever the DB version advances
   const seededVersion = await getMeta('seededVersion') as number | undefined
   if (seededVersion !== SEED_VERSION) {
     await seedSystemDefs()
     await setMeta('seededVersion', SEED_VERSION)
   }
 
-  let activeProjectId = await getMeta('activeProjectId') as string | undefined
-
-  if (!activeProjectId) {
+  // Ensure at least one project exists
+  let allProjects = await loadAllProjects()
+  if (allProjects.length === 0) {
     const migratedId = await migrateFromLocalStorage()
-    if (migratedId) {
-      activeProjectId = migratedId
-    } else {
-      const newId = crypto.randomUUID()
-      const now   = Date.now()
+    if (!migratedId) {
+      const now = Date.now()
       await saveProject({
-        id:                newId,
-        name:              'Default',
-        createdAt:         now,
-        updatedAt:         now,
-        placedComponents:  [],
-        wires:             [],
-        activeJumperSetId: null,
+        id: crypto.randomUUID(), name: 'Untitled',
+        createdAt: now, updatedAt: now,
+        placedComponents: [], wires: [], activeJumperSetId: null,
       })
-      activeProjectId = newId
     }
-    await setMeta('activeProjectId', activeProjectId)
+    allProjects = await loadAllProjects()
   }
 
-  const project       = (await loadProject(activeProjectId))!
   const componentDefs = await loadAllComponentDefs()
   const jumperSets    = await loadAllJumperSets()
 
-  return { activeProjectId, project, componentDefs, jumperSets }
+  return { allProjects, componentDefs, jumperSets }
 }

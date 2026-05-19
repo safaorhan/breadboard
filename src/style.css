@@ -1023,6 +1023,258 @@ body {
 .preview-wire { stroke-width: 1.5; stroke-dasharray: 4 3; pointer-events: none; opacity: 0.7; }
 .ghost-body   { fill: #e8f5ed; stroke: #2d8a50; stroke-width: 1; opacity: 0.5; pointer-events: none; }
 
+/* ─── Topbar: project name ───────────────────────────────────────────────── */
+#app-logo {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  padding-right: 14px;
+  border-right: 1px solid var(--border-2);
+  cursor: pointer;
+  border-radius: var(--r);
+  padding: 4px 14px 4px 4px;
+  transition: background 0.1s;
+  flex-shrink: 0;
+}
+#app-logo:hover { background: var(--bg-hover); }
+#app-logo svg   { flex-shrink: 0; }
+#app-name {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-1);
+  letter-spacing: -0.01em;
+  white-space: nowrap;
+}
+
+#projects-topbar-title {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-1);
+  padding-left: 14px;
+  border-left: 1px solid var(--border-2);
+  display: none;
+}
+
+#topbar-center {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+#project-name-wrap {
+  display: flex;
+  align-items: center;
+  max-width: 320px;
+}
+#project-name {
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--text-1);
+  cursor: pointer;
+  padding: 3px 8px;
+  border-radius: var(--r);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 280px;
+  transition: background 0.1s;
+}
+#project-name:hover { background: var(--bg-hover); }
+#project-name-input {
+  font-size: 12px;
+  font-weight: 500;
+  font-family: inherit;
+  color: var(--text-1);
+  background: var(--bg-3);
+  border: 1px solid var(--accent);
+  border-radius: var(--r);
+  padding: 3px 8px;
+  outline: none;
+  width: 200px;
+  display: none;
+}
+#project-name-input.visible { display: block; }
+
+/* Topbar separator line */
+.topbar-sep {
+  width: 1px;
+  height: 16px;
+  background: var(--border-2);
+  margin: 0 4px;
+  flex-shrink: 0;
+}
+
+/* New project button */
+#new-project-btn {
+  display: none;
+  background: var(--accent);
+  color: #fff;
+  border: none;
+  border-radius: var(--r);
+  padding: 5px 12px;
+  font-size: 11px;
+  font-weight: 500;
+  font-family: inherit;
+  cursor: pointer;
+  transition: opacity 0.1s;
+  white-space: nowrap;
+}
+#new-project-btn:hover { opacity: 0.85; }
+
+/* Canvas mode hides projects-only elements; projects mode hides canvas-only elements */
+body.projects-mode #projects-topbar-title { display: block; }
+body.projects-mode #project-name-wrap     { display: none; }
+body.projects-mode #new-project-btn       { display: block; }
+body.projects-mode #new-project-sep       { display: none; }
+body.projects-mode #zoom-sep              { display: none; }
+body.projects-mode #zoom-out              { display: none; }
+body.projects-mode #zoom-label            { display: none; }
+body.projects-mode #zoom-in               { display: none; }
+body.projects-mode #zoom-fit              { display: none; }
+body.projects-mode #app                   { display: none; }
+body.projects-mode #projects-screen       { display: flex; }
+
+/* ─── Projects screen ────────────────────────────────────────────────────── */
+#projects-screen {
+  flex: 1;
+  display: none;
+  flex-direction: column;
+  overflow-y: auto;
+  background: var(--bg);
+  padding: 32px 40px 48px;
+}
+
+#projects-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 20px;
+  align-content: start;
+}
+
+.project-card {
+  border-radius: 6px;
+  overflow: hidden;
+  border: 1px solid var(--border);
+  cursor: pointer;
+  transition: border-color 0.15s, box-shadow 0.15s;
+  background: var(--bg-2);
+  position: relative;
+}
+.project-card:hover {
+  border-color: var(--border-2);
+  box-shadow: 0 4px 16px rgba(0,0,0,0.3);
+}
+
+.project-card-thumb {
+  width: 100%;
+  aspect-ratio: 16 / 10;
+  background: #2a2a2a;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-bottom: 1px solid var(--border);
+}
+html[data-theme="light"] .project-card-thumb { background: #e8e8e8; }
+
+.project-card-thumb img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.project-card-thumb-placeholder {
+  opacity: 0.2;
+}
+
+.project-card-info {
+  padding: 10px 12px;
+}
+.project-card-name {
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--text-1);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  margin-bottom: 3px;
+}
+.project-card-date {
+  font-size: 10px;
+  color: var(--text-3);
+}
+
+/* Card action buttons — visible on hover */
+.project-card-actions {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  display: flex;
+  gap: 4px;
+  opacity: 0;
+  transition: opacity 0.15s;
+}
+.project-card:hover .project-card-actions { opacity: 1; }
+
+.project-card-btn {
+  width: 26px;
+  height: 26px;
+  border-radius: var(--r);
+  border: none;
+  background: var(--bg-2);
+  color: var(--text-2);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.1s, color 0.1s;
+  backdrop-filter: blur(4px);
+}
+.project-card-btn:hover { background: var(--bg-3); color: var(--text-1); }
+.project-card-btn.danger:hover { color: var(--red); }
+
+/* Inline rename input on card */
+.project-card-name-input {
+  font-size: 12px;
+  font-weight: 500;
+  font-family: inherit;
+  color: var(--text-1);
+  background: var(--bg-3);
+  border: 1px solid var(--accent);
+  border-radius: var(--r);
+  padding: 1px 5px;
+  outline: none;
+  width: 100%;
+  display: none;
+}
+.project-card-name-input.visible { display: block; }
+
+/* "New project" card (first card in grid) */
+.project-card-new {
+  border-style: dashed;
+  border-color: var(--border-2);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-height: 160px;
+  color: var(--text-3);
+  font-size: 11px;
+  transition: border-color 0.15s, color 0.15s, background 0.15s;
+  cursor: pointer;
+  background: transparent;
+}
+.project-card-new:hover {
+  border-color: var(--accent);
+  color: var(--accent);
+  background: var(--accent-bg);
+}
+.project-card-new svg { opacity: 0.5; transition: opacity 0.15s; }
+.project-card-new:hover svg { opacity: 1; }
+
 /* ─── Theme toggle icon visibility ──────────────────────────────────────── */
 /* Dark mode (default): show sun, hide moon */
 #theme-toggle .icon-moon { display: none; }

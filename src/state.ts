@@ -5,6 +5,9 @@ import { COMPONENT_COLORS } from './colors'
 import {
   initializeDB,
   saveProject,
+  loadProject,
+  loadAllProjects,
+  deleteProject as dbDeleteProject,
   saveComponentDef,
   deleteComponentDef as dbDeleteComponentDef,
   saveJumperSet,
@@ -25,11 +28,13 @@ export const state: AppState = {
 const listeners: (() => void)[] = []
 let nextColorIdx    = 0
 let activeProject: Project = {
-  id: '', name: 'Default', createdAt: 0, updatedAt: 0,
+  id: '', name: 'Untitled', createdAt: 0, updatedAt: 0,
   placedComponents: [], wires: [], activeJumperSetId: null,
 }
 let activeJumperSet: JumperSet | null = null
 let allJumperSets:   StoredJumperSet[] = []
+
+const SESSION_KEY = 'breadboard-project'
 
 // ── Persistence ───────────────────────────────────────────────────────────────
 
@@ -45,23 +50,21 @@ function saveActiveJumperSet(): void {
   saveJumperSet({ ...activeJumperSet, source: 'user' }).catch(() => {})
 }
 
-// If no active set exists yet, create an empty user set on demand.
 function getOrCreateUserSet(): JumperSet {
   if (activeJumperSet) return activeJumperSet
   const set: JumperSet = { id: crypto.randomUUID(), name: 'My Jumpers', jumpers: [] }
-  activeJumperSet        = set
-  state.activeJumperSetId        = set.id
+  activeJumperSet                 = set
+  state.activeJumperSetId         = set.id
   activeProject.activeJumperSetId = set.id
   saveJumperSet({ ...set, source: 'user' }).catch(() => {})
   return set
 }
 
-// ── Init ──────────────────────────────────────────────────────────────────────
+// ── Apply a project record into in-memory state ───────────────────────────────
 
-export async function initDB(): Promise<void> {
-  const { project, componentDefs, jumperSets } = await initializeDB()
-
+function applyProjectToState(project: Project): void {
   activeProject = project
+  sessionStorage.setItem(SESSION_KEY, project.id)
 
   state.placedComponents = project.placedComponents.map((p: PlacedComponent) => ({
     ...p,
@@ -69,15 +72,12 @@ export async function initDB(): Promise<void> {
     colorIdx:    p.colorIdx    ?? 0,
     instanceNum: p.instanceNum ?? 1,
   }))
-  state.wires     = project.wires
+  state.wires        = project.wires
+  state.selectedId   = null
+  state.selectedType = null
 
-  allJumperSets    = jumperSets
-  state.jumperSets = jumperSets
-
-  const requestedSet = jumperSets.find(s => s.id === project.activeJumperSetId) ?? null
-  // If the previously active set was a system preset that got purged on re-seed,
-  // fall back to the first available system set so the project isn't left with none.
-  activeJumperSet = requestedSet ?? jumperSets.find(s => s.source === 'system') ?? null
+  const requestedSet = allJumperSets.find(s => s.id === project.activeJumperSetId) ?? null
+  activeJumperSet = requestedSet ?? allJumperSets.find(s => s.source === 'system') ?? null
 
   state.activeJumperSetId = activeJumperSet?.id ?? null
   state.jumperLibrary     = activeJumperSet ? [...activeJumperSet.jumpers] : []
@@ -87,11 +87,25 @@ export async function initDB(): Promise<void> {
     saveProject(activeProject).catch(() => {})
   }
 
-  // StoredComponentDef extends ComponentDef, directly assignable
-  state.componentLibrary = componentDefs
-
   const maxIdx = state.placedComponents.reduce((m, p) => Math.max(m, p.colorIdx), -1)
   nextColorIdx = maxIdx + 1
+}
+
+// ── Init ──────────────────────────────────────────────────────────────────────
+
+export async function initDB(): Promise<void> {
+  const { allProjects, componentDefs, jumperSets } = await initializeDB()
+
+  allJumperSets    = jumperSets
+  state.jumperSets = jumperSets
+  state.componentLibrary = componentDefs
+
+  // Pick active project: sessionStorage → most recently modified
+  const sessionId = sessionStorage.getItem(SESSION_KEY)
+  const project   = allProjects.find(p => p.id === sessionId)
+    ?? [...allProjects].sort((a, b) => b.updatedAt - a.updatedAt)[0]
+
+  applyProjectToState(project)
 }
 
 // ── Core ──────────────────────────────────────────────────────────────────────
@@ -117,6 +131,74 @@ export function _resetStateForTest(library: ComponentDef[]): void {
   nextColorIdx    = 0
   activeJumperSet = null
   allJumperSets   = []
+}
+
+// ── Project management ────────────────────────────────────────────────────────
+
+export function getActiveProjectId():   string { return activeProject.id }
+export function getActiveProjectName(): string { return activeProject.name }
+
+export async function getAllProjects(): Promise<Project[]> {
+  return loadAllProjects()
+}
+
+export function renameProject(name: string): void {
+  activeProject.name = name.trim() || 'Untitled'
+  saveProject(activeProject).catch(() => {})
+  // No notify() — canvas hasn't changed; caller updates the DOM directly
+}
+
+export async function renameProjectById(id: string, name: string): Promise<void> {
+  if (id === activeProject.id) { renameProject(name); return }
+  const project = await loadProject(id)
+  if (!project) return
+  project.name = name.trim() || 'Untitled'
+  saveProject(project).catch(() => {})
+}
+
+export function updateThumbnail(dataURL: string): void {
+  activeProject.thumbnail = dataURL
+  saveProject(activeProject).catch(() => {})
+}
+
+export async function openProject(projectId: string): Promise<void> {
+  const project = await loadProject(projectId)
+  if (!project) return
+  applyProjectToState(project)
+  notify()
+}
+
+export async function createProject(): Promise<string> {
+  const now = Date.now()
+  const project: Project = {
+    id:                crypto.randomUUID(),
+    name:              'Untitled',
+    createdAt:         now,
+    updatedAt:         now,
+    placedComponents:  [],
+    wires:             [],
+    activeJumperSetId: null,
+  }
+  await saveProject(project)
+  return project.id
+}
+
+export async function deleteProjectById(id: string): Promise<void> {
+  await dbDeleteProject(id)
+  // If deleting the active project, open another one
+  if (id === activeProject.id) {
+    const remaining = await loadAllProjects()
+    if (remaining.length > 0) {
+      const next = [...remaining].sort((a, b) => b.updatedAt - a.updatedAt)[0]
+      applyProjectToState(next)
+      notify()
+    } else {
+      // Create a fresh project so the app is never left without one
+      const newId = await createProject()
+      const fresh = await loadProject(newId)
+      if (fresh) { applyProjectToState(fresh); notify() }
+    }
+  }
 }
 
 export function setActiveJumperSet(id: string | null): void {
