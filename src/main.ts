@@ -536,13 +536,57 @@ function buildProjectCard(project: Project): HTMLDivElement {
   return card
 }
 
+// ── Routing ───────────────────────────────────────────────────────────────
+
+function navigate(path: string, replace = false): void {
+  const url = new URL(location.href)
+  url.hash  = path
+  if (replace) history.replaceState(null, '', url)
+  else         history.pushState(null, '', url)
+}
+
+async function handleRoute(): Promise<void> {
+  const hash = location.hash.replace(/^#/, '') || '/'
+
+  if (hash === '/' || hash === '') {
+    document.body.classList.add('projects-mode')
+    await renderProjectsScreen()
+    return
+  }
+
+  const m = hash.match(/^\/project\/(.+)$/)
+  if (m) {
+    const id       = m[1]
+    const projects = await getAllProjects()
+    if (projects.some(p => p.id === id)) {
+      if (id !== getActiveProjectId()) await openProject(id)
+      document.body.classList.remove('projects-mode')
+      syncProjectName()
+      update()
+    } else {
+      navigate('/', true)
+      document.body.classList.add('projects-mode')
+      await renderProjectsScreen()
+    }
+    return
+  }
+
+  // Unknown hash — fall back to current project
+  navigate(`/project/${getActiveProjectId()}`, true)
+  document.body.classList.remove('projects-mode')
+  syncProjectName()
+  update()
+}
+
 async function showProjectsScreen(): Promise<void> {
   await captureAndSaveThumbnail()
+  navigate('/')
   document.body.classList.add('projects-mode')
   await renderProjectsScreen()
 }
 
 function showCanvasScreen(): void {
+  navigate(`/project/${getActiveProjectId()}`)
   document.body.classList.remove('projects-mode')
   syncProjectName()
   update()
@@ -1043,12 +1087,22 @@ function fitToScreen(): void {
   setZoom(Math.min(scaleX, scaleY))
 }
 
-initDB().then(() => {
+initDB().then(async () => {
   onStateChange(() => { update(); syncProjectName(); scheduleThumbnail() })
-  update()
-  syncProjectName()
-  requestAnimationFrame(() => fitToScreen())
+
+  // Set a default URL if the page was opened with no hash
+  if (!location.hash || location.hash === '#') {
+    navigate(`/project/${getActiveProjectId()}`, true)
+  }
+
+  await handleRoute()
+
+  if (!document.body.classList.contains('projects-mode')) {
+    requestAnimationFrame(() => fitToScreen())
+  }
 })
+
+window.addEventListener('popstate', () => handleRoute())
 
 makeCollapsible(componentsLabel, layersList)
 makeCollapsible(wiresLabel,      wiresList)
