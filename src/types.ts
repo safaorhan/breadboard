@@ -32,6 +32,7 @@ export interface PlacedComponent {
   rotated: boolean
   colorIdx: number
   instanceNum: number
+  label?: string     // per-instance display name override
 }
 
 export interface Wire {

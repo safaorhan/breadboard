@@ -86,10 +86,11 @@ export function renderLayersPanel(
 
     const name = document.createElement('span')
     name.className   = 'layer-name'
-    const baseName = def?.name ?? '?'
-    name.textContent = (defCounts.get(placed.defId) ?? 0) > 1
+    const baseName   = def?.name ?? '?'
+    const autoName   = (defCounts.get(placed.defId) ?? 0) > 1
       ? `${baseName} #${placed.instanceNum}`
       : baseName
+    name.textContent = placed.label ?? autoName
 
     const actions = document.createElement('div')
     actions.className = 'layer-actions'

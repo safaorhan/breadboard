@@ -409,6 +409,13 @@ export function setComponentColor(id: string, colorIdx: number): void {
   notify()
 }
 
+export function setComponentLabel(id: string, label: string): void {
+  const comp = state.placedComponents.find(c => c.id === id)
+  if (!comp) return
+  comp.label = label || undefined
+  notify()
+}
+
 export function addComponentDef(def: Omit<ComponentDef, 'id'>): void {
   const newDef = { ...def, id: crypto.randomUUID() }
   state.componentLibrary.push(newDef)

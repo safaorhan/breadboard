@@ -1,4 +1,4 @@
-import { state, onStateChange, initDB, setComponentColor, toggleComponentLock, toggleComponentVisibility, rotateComponent, removeComponent, removeWire, selectItem, getActiveProjectId, getActiveProjectName, renameProject, updateThumbnail, openProject, createProject, deleteProjectById, getAllProjects, importProjectData, renameProjectById, updateComponentDef } from './state'
+import { state, onStateChange, initDB, setComponentColor, setComponentLabel, toggleComponentLock, toggleComponentVisibility, rotateComponent, removeComponent, removeWire, selectItem, getActiveProjectId, getActiveProjectName, renameProject, updateThumbnail, openProject, createProject, deleteProjectById, getAllProjects, importProjectData, renameProjectById } from './state'
 import type { BBFile } from './state'
 import type { Project } from './db'
 import { matchJumper, COPPER_COLOR } from './jumpers'
@@ -1050,9 +1050,10 @@ function startLayerItemRename(compId: string): void {
   const nameEl = li.querySelector('.layer-name') as HTMLElement
   if (!nameEl || nameEl.querySelector('input')) return
 
+  const currentName = nameEl.textContent ?? def.name
   const input = document.createElement('input')
   input.type       = 'text'
-  input.value      = def.name
+  input.value      = currentName
   input.className  = 'layer-name-input'
   input.spellcheck = false
   nameEl.textContent = ''
@@ -1061,13 +1062,13 @@ function startLayerItemRename(compId: string): void {
   input.select()
 
   const commit = () => {
-    const newName = input.value.trim() || def.name
-    updateComponentDef(def.id, { ...def, name: newName })
+    const newLabel = input.value.trim()
+    setComponentLabel(compId, newLabel)
   }
   input.addEventListener('blur',    commit)
   input.addEventListener('keydown', (ev) => {
     if (ev.key === 'Enter')  { ev.preventDefault(); input.blur() }
-    if (ev.key === 'Escape') { input.value = def.name; input.blur() }
+    if (ev.key === 'Escape') { input.value = currentName; input.blur() }
   })
 }
 
