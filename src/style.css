@@ -1430,64 +1430,36 @@ body.projects-mode #projects-screen       { display: flex; }
 #insert-search-clear.visible { display: block; }
 
 #insert-grid {
-  padding: 8px;
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(90px, 1fr));
-  gap: 4px;
-  overflow-y: auto;
-}
-
-.insert-grid-section {
-  grid-column: 1 / -1;
-  font-size: 10px;
-  font-weight: 600;
-  color: var(--text-3);
-  text-transform: uppercase;
-  letter-spacing: 0.09em;
-  padding: 4px 2px 2px;
-}
-
-.insert-grid-item {
+  padding: 4px 6px 8px;
   display: flex;
   flex-direction: column;
-  align-items: center;
-  gap: 5px;
-  padding: 10px 6px 8px;
-  border-radius: 5px;
-  cursor: pointer;
-  background: var(--bg-3);
-  border: 1px solid transparent;
-  color: var(--text-2);
-  font-size: 10px;
-  font-family: inherit;
-  text-align: center;
-  transition: background 0.08s, color 0.08s, border-color 0.08s;
-  overflow: hidden;
+  overflow-y: auto;
+  flex: 1;
 }
-.insert-grid-item:hover {
-  background: var(--bg-hover);
-  color: var(--text-1);
-  border-color: var(--border-2);
-}
-.insert-grid-item-icon {
-  width: 32px;
-  height: 32px;
-  border-radius: 3px;
-  background: var(--bg-2);
+
+.insert-item {
   display: flex;
   align-items: center;
-  justify-content: center;
-  font-size: 14px;
-  font-weight: 600;
-  color: var(--text-3);
+  padding: 0 10px;
+  min-height: 28px;
+  border-radius: var(--r);
+  cursor: pointer;
+  color: var(--text-1);
+  font-size: 11px;
+  font-family: inherit;
+  background: none;
+  border: none;
+  text-align: left;
+  width: 100%;
   overflow: hidden;
-  text-overflow: ellipsis;
+  transition: background 0.08s;
 }
-.insert-grid-item-name {
+.insert-item:hover { background: var(--bg-hover); }
+
+.insert-item-name {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-  width: 100%;
 }
 
 /* ─── Projects screen ────────────────────────────────────────────────────── */

@@ -710,18 +710,13 @@ function getRecentDefIds(): string[] {
 
 function buildInsertGridItem(def: { id: string; name: string }): HTMLButtonElement {
   const btn = document.createElement('button')
-  btn.className = 'insert-grid-item'
+  btn.className = 'insert-item'
   btn.type      = 'button'
 
-  const icon = document.createElement('div')
-  icon.className   = 'insert-grid-item-icon'
-  icon.textContent = def.name.slice(0, 4)
-
-  const name = document.createElement('div')
-  name.className   = 'insert-grid-item-name'
+  const name = document.createElement('span')
+  name.className   = 'insert-item-name'
   name.textContent = def.name
 
-  btn.appendChild(icon)
   btn.appendChild(name)
   btn.addEventListener('click', () => {
     hideInsertPopup()
