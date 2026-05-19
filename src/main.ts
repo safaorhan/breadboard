@@ -821,7 +821,8 @@ function showColorPicker(compId: string, anchor: HTMLElement): void {
     s.classList.toggle('current', i === current)
   })
   colorPicker.style.top   = `${rect.top}px`
-  colorPicker.style.right = `${window.innerWidth - rect.left + 6}px`
+  colorPicker.style.left  = `${rect.right + 6}px`
+  colorPicker.style.right = ''
   colorPicker.classList.add('visible')
 }
 
@@ -1035,42 +1036,25 @@ document.addEventListener('keydown', (e) => {
 
 // --- Layers panel ---
 
-layersList.addEventListener('click', (e) => {
-  const target = e.target as HTMLElement
-  const li     = target.closest('.layer-item')  as HTMLElement | null
-  const btn    = target.closest('[data-action]') as HTMLElement | null
-  if (!li) return
-  const compId = li.dataset.compId
-  if (!compId) return
-  e.stopPropagation()
+let lastLayerClickId   = ''
+let lastLayerClickTime = 0
 
-  const action = btn?.dataset.action
-  if (action === 'visibility')  toggleComponentVisibility(compId)
-  else if (action === 'lock')   toggleComponentLock(compId)
-  else if (action === 'rotate') rotateComponent(compId)
-  else if (action === 'delete') removeComponent(compId)
-  else if (action === 'color')  showColorPicker(compId, btn as HTMLElement)
-  else                          selectItem(compId, 'component')
-})
-
-layersList.addEventListener('dblclick', (e) => {
-  const li = (e.target as HTMLElement).closest('.layer-item') as HTMLElement | null
-  if (!li) return
-  const compId = li.dataset.compId
-  if (!compId) return
+function startLayerItemRename(compId: string): void {
   const placed = state.placedComponents.find(c => c.id === compId)
   if (!placed) return
   const def = state.componentLibrary.find(d => d.id === placed.defId)
   if (!def) return
-
+  // Re-query the li after any re-render caused by the first click
+  const li = layersList.querySelector(`[data-comp-id="${compId}"]`) as HTMLElement | null
+  if (!li) return
   const nameEl = li.querySelector('.layer-name') as HTMLElement
-  if (!nameEl || nameEl.querySelector('input')) return  // already editing
+  if (!nameEl || nameEl.querySelector('input')) return
 
   const input = document.createElement('input')
-  input.type        = 'text'
-  input.value       = def.name
-  input.className   = 'layer-name-input'
-  input.spellcheck  = false
+  input.type       = 'text'
+  input.value      = def.name
+  input.className  = 'layer-name-input'
+  input.spellcheck = false
   nameEl.textContent = ''
   nameEl.appendChild(input)
   input.focus()
@@ -1085,6 +1069,35 @@ layersList.addEventListener('dblclick', (e) => {
     if (ev.key === 'Enter')  { ev.preventDefault(); input.blur() }
     if (ev.key === 'Escape') { input.value = def.name; input.blur() }
   })
+}
+
+layersList.addEventListener('click', (e) => {
+  const target = e.target as HTMLElement
+  const li     = target.closest('.layer-item')  as HTMLElement | null
+  const btn    = target.closest('[data-action]') as HTMLElement | null
+  if (!li) return
+  const compId = li.dataset.compId
+  if (!compId) return
+  e.stopPropagation()
+
+  const action = btn?.dataset.action
+  if      (action === 'visibility') toggleComponentVisibility(compId)
+  else if (action === 'lock')       toggleComponentLock(compId)
+  else if (action === 'rotate')     rotateComponent(compId)
+  else if (action === 'delete')     removeComponent(compId)
+  else if (action === 'color')      showColorPicker(compId, btn as HTMLElement)
+  else {
+    const now = Date.now()
+    if (compId === lastLayerClickId && now - lastLayerClickTime < 500) {
+      // Double-click detected — start rename (re-query element after re-render)
+      lastLayerClickId = ''
+      requestAnimationFrame(() => startLayerItemRename(compId))
+    } else {
+      lastLayerClickId   = compId
+      lastLayerClickTime = now
+      selectItem(compId, 'component')
+    }
+  }
 })
 
 // --- Wires list ---
