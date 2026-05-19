@@ -1212,7 +1212,7 @@ body.projects-mode #topbar { display: flex; }
   0%, 100% { opacity: 1; stroke-width: 3.5; filter: drop-shadow(0 0 4px currentColor); }
   50%       { opacity: 0.35; stroke-width: 2; filter: none; }
 }
-.wire.selected { animation: wire-selected-flash 0.9s ease-in-out infinite; }
+.wire.selected { animation: wire-selected-flash 2s ease-in-out infinite; }
 
 /* Option A — flowing dash sweep (inactive) */
 @keyframes wire-sweep {
