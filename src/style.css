@@ -1447,8 +1447,9 @@ body.projects-mode #projects-screen    { display: flex; }
 
 #insert-search-footer {
   display: flex;
+  align-items: center;
   justify-content: flex-end;
-  padding: 6px 10px;
+  padding: 10px 14px;
   border-top: 1px solid var(--border);
   flex-shrink: 0;
 }
