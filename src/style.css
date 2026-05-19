@@ -41,17 +41,15 @@ body {
 
 /* ─── Topbar (projects mode only) ───────────────────────────────────────── */
 #topbar {
-  height: 40px;
-  min-height: 40px;
-  background: var(--bg-2);
+  height: 52px;
+  min-height: 52px;
+  background: var(--bg);
   border-bottom: 1px solid var(--border);
-  display: none;        /* hidden in canvas mode */
+  display: none;
   align-items: center;
-  padding: 0 12px;
-  gap: 0;
+  justify-content: space-between;
+  padding: 0 24px;
   user-select: none;
-  position: relative;
-  z-index: 10;
   flex-shrink: 0;
 }
 body.projects-mode #topbar { display: flex; }
@@ -59,26 +57,26 @@ body.projects-mode #topbar { display: flex; }
 #app-logo {
   display: flex;
   align-items: center;
-  gap: 7px;
-  padding-right: 14px;
-  border-right: 1px solid var(--border-2);
+  gap: 8px;
+  cursor: pointer;
+  padding: 6px 10px;
+  border-radius: 6px;
+  margin-left: -10px;
+  transition: background 0.1s;
 }
-#app-logo img { flex-shrink: 0; opacity: 0.85; }
+#app-logo:hover { background: var(--bg-hover); }
+#app-logo img { flex-shrink: 0; }
 #app-name {
-  font-size: 12px;
-  font-weight: 600;
+  font-size: 13px;
+  font-weight: 700;
+  font-family: 'Inter', system-ui, -apple-system, sans-serif;
   color: var(--text-1);
-  letter-spacing: -0.01em;
 }
-
-#topbar-center { flex: 1; }
 
 #topbar-right {
   display: flex;
   align-items: center;
-  gap: 1px;
-  padding-left: 14px;
-  border-left: 1px solid var(--border-2);
+  gap: 8px;
 }
 
 /* ─── Zoom controls ──────────────────────────────────────────────────────── */
@@ -1235,21 +1233,6 @@ body.projects-mode #topbar { display: flex; }
   white-space: nowrap;
 }
 
-#projects-topbar-title {
-  font-size: 12px;
-  font-weight: 600;
-  color: var(--text-1);
-  padding-left: 14px;
-  border-left: 1px solid var(--border-2);
-  display: none;
-}
-
-#topbar-center {
-  flex: 1;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
 
 #project-name-wrap {
   display: flex;
@@ -1300,16 +1283,16 @@ body.projects-mode #topbar { display: flex; }
   background: var(--accent);
   color: #fff;
   border: none;
-  border-radius: var(--r);
-  padding: 5px 12px;
-  font-size: 11px;
+  border-radius: 6px;
+  padding: 7px 16px;
+  font-size: 12px;
   font-weight: 500;
   font-family: inherit;
   cursor: pointer;
-  transition: opacity 0.1s;
+  transition: opacity 0.15s;
   white-space: nowrap;
 }
-#new-project-btn:hover { opacity: 0.85; }
+#new-project-btn:hover { opacity: 0.88; }
 
 /* Import project button */
 #import-project-btn {
@@ -1317,23 +1300,22 @@ body.projects-mode #topbar { display: flex; }
   background: transparent;
   color: var(--text-2);
   border: 1px solid var(--border-2);
-  border-radius: var(--r);
-  padding: 5px 12px;
-  font-size: 11px;
+  border-radius: 6px;
+  padding: 7px 16px;
+  font-size: 12px;
   font-weight: 500;
   font-family: inherit;
   cursor: pointer;
-  transition: color 0.1s, border-color 0.1s;
+  transition: background 0.1s, color 0.1s;
   white-space: nowrap;
 }
-#import-project-btn:hover { color: var(--text-1); border-color: var(--border-2); }
+#import-project-btn:hover { background: var(--bg-hover); color: var(--text-1); }
 
 /* Projects mode: show topbar + projects screen, hide canvas */
-body.projects-mode #projects-topbar-title { display: block; }
-body.projects-mode #new-project-btn       { display: block; }
-body.projects-mode #import-project-btn    { display: block; }
-body.projects-mode #app                   { display: none; }
-body.projects-mode #projects-screen       { display: flex; }
+body.projects-mode #new-project-btn    { display: block; }
+body.projects-mode #import-project-btn { display: block; }
+body.projects-mode #app                { display: none; }
+body.projects-mode #projects-screen    { display: flex; }
 
 /* ─── Floating action bar ────────────────────────────────────────────────── */
 #action-bar {
@@ -1469,13 +1451,22 @@ body.projects-mode #projects-screen       { display: flex; }
   flex-direction: column;
   overflow-y: auto;
   background: var(--bg);
-  padding: 32px 40px 48px;
+  padding: 40px 48px 64px;
+}
+
+#projects-heading {
+  font-size: 22px;
+  font-weight: 700;
+  font-family: 'Inter', system-ui, -apple-system, sans-serif;
+  color: var(--text-1);
+  margin: 0 0 28px;
+  letter-spacing: -0.02em;
 }
 
 #projects-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
-  gap: 20px;
+  gap: 16px;
   align-content: start;
 }
 
