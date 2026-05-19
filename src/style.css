@@ -918,6 +918,7 @@ body.projects-mode #topbar { display: flex; }
 #right-controls {
   display: flex;
   align-items: center;
+  justify-content: flex-end;
   gap: 1px;
   padding: 4px 6px;
   flex-shrink: 0;
