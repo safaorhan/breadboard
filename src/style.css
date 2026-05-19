@@ -241,7 +241,7 @@ body.projects-mode #topbar { display: flex; }
   display: flex;
   align-items: center;
   max-width: calc(100% - 32px);
-  padding: 4px 8px;
+  padding: 4px 8px 4px 0;
   background: none;
   border: none;
   border-radius: 5px 0 0 5px;
