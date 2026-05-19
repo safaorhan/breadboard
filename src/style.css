@@ -1205,11 +1205,22 @@ body.projects-mode #topbar { display: flex; }
 .pin-hole:hover { fill: var(--accent); }
 
 /* ─── SVG: wires ─────────────────────────────────────────────────────────── */
-.wire-border        { stroke: rgba(0,0,0,0.8); stroke-width: 3.5; stroke-linecap: round; pointer-events: none; }
-.wire               { stroke-width: 2; stroke-linecap: round; cursor: pointer; }
-.wire:hover,
-.wire.panel-hover   { stroke-width: 3; }
-.wire.selected      { stroke-width: 2.5; }
+.wire-border      { stroke: rgba(0,0,0,0.8); stroke-width: 3.5; stroke-linecap: round; pointer-events: none; }
+.wire             { stroke-width: 2; stroke-linecap: round; cursor: pointer; }
+.wire:hover       { stroke-width: 3; }
+.wire.selected    { stroke-width: 2.5; }
+
+@keyframes wire-sweep {
+  from { stroke-dashoffset: 14; }
+  to   { stroke-dashoffset: 0; }
+}
+
+.wire.panel-hover {
+  stroke-width: 3.5;
+  stroke-dasharray: 8 6;
+  animation: wire-sweep 0.35s linear infinite;
+  filter: brightness(1.7) drop-shadow(0 0 4px rgba(255,255,255,0.4));
+}
 
 .preview-wire { stroke-width: 1.5; stroke-dasharray: 4 3; pointer-events: none; opacity: 0.7; }
 .ghost-body   { fill: #e8f5ed; stroke: #2d8a50; stroke-width: 1; opacity: 0.5; pointer-events: none; }
