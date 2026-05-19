@@ -124,7 +124,7 @@ body.projects-mode #topbar { display: flex; }
   height: 40px;
   font-size: 11px;
   font-weight: 600;
-  color: var(--text-2);
+  color: var(--text-1);
   user-select: none;
   display: flex;
   align-items: center;
