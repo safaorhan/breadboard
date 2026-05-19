@@ -1140,7 +1140,10 @@ wiresList.addEventListener('click', (e) => {
 // --- Keyboard ---
 
 document.addEventListener('keydown', (e) => {
-  if (e.key === 'Escape')                          { hideContextMenu(); cancelCurrentDrag() }
+  if (e.key === 'Escape') {
+    hideContextMenu(); cancelCurrentDrag()
+    if (state.selectedId) selectItem(null, null)
+  }
   if (e.key === 'Delete' || e.key === 'Backspace') deleteSelected()
   if ((e.ctrlKey || e.metaKey) && e.key === '=')  { e.preventDefault(); setZoom(zoomLevel * 1.25) }
   if ((e.ctrlKey || e.metaKey) && e.key === '-')  { e.preventDefault(); setZoom(zoomLevel / 1.25) }
