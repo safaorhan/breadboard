@@ -28,10 +28,25 @@ export function initSVG(container: HTMLElement): SVGSVGElement {
   svg.setAttribute('viewBox', `0 0 ${SVG_WIDTH} ${SVG_HEIGHT}`)
   svg.setAttribute('fill',    '#faf8f4')  // inherited default for child elements
 
-  for (const id of ['board-layer', 'wire-layer', 'component-layer', 'preview-layer']) {
-    const g = svgEl('g')
-    g.id = id
-    svg.appendChild(g)
+  for (const id of ['board-layer', 'component-layer']) {
+    const g = svgEl('g'); g.id = id; svg.appendChild(g)
+  }
+
+  // Scrim: full-board dimming rect, sits above components but below wires
+  const scrimLayer = svgEl('g')
+  scrimLayer.id = 'scrim-layer'
+  const scrimRect = svgEl('rect')
+  scrimRect.id = 'scrim-rect'
+  scrimRect.setAttribute('width',  String(SVG_WIDTH))
+  scrimRect.setAttribute('height', String(SVG_HEIGHT))
+  scrimRect.setAttribute('fill',   'black')
+  scrimRect.setAttribute('opacity', '0')
+  scrimRect.setAttribute('pointer-events', 'none')
+  scrimLayer.appendChild(scrimRect)
+  svg.appendChild(scrimLayer)
+
+  for (const id of ['wire-layer', 'preview-layer']) {
+    const g = svgEl('g'); g.id = id; svg.appendChild(g)
   }
 
   // Hover-label overlay — must be last so it renders above everything

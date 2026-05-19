@@ -1239,25 +1239,25 @@ body.projects-mode #topbar { display: flex; }
   filter: drop-shadow(0 0 3px rgba(255,255,255,0.5));
 } */
 
-/* Option D — grayscale canvas + red flashing wires (active) */
+/* Option D — scrim + red flashing wires (active) */
 @keyframes wire-flash-red {
   0%, 100% { opacity: 1; }
   50%       { opacity: 0.5; }
 }
 
-svg.has-highlight {
-  background-color: #888 !important; /* grey the cream SVG background */
-}
-svg.has-highlight #board-layer     { filter: grayscale(1) brightness(0.45); }
-svg.has-highlight #component-layer { opacity: 0.12; }
-svg.has-highlight .wire-border              { opacity: 0.08; }
-svg.has-highlight .wire:not(.panel-hover)   { opacity: 0.1; }
+/* Show scrim when highlighting */
+svg.has-highlight #scrim-rect { opacity: 0.72; }
 
+/* Hide non-highlighted wires above the scrim */
+svg.has-highlight .wire-border            { opacity: 0; }
+svg.has-highlight .wire:not(.panel-hover) { opacity: 0; }
+
+/* Highlighted wires: red, animated, above the scrim */
 svg.has-highlight .wire.panel-hover {
   stroke: #c94040 !important;
   stroke-width: 3;
   animation: wire-flash-red 1.4s ease-in-out infinite;
-  filter: drop-shadow(0 0 4px rgba(200, 60, 60, 0.6));
+  filter: drop-shadow(0 0 5px rgba(200, 60, 60, 0.7));
   opacity: 1;
 }
 
