@@ -238,11 +238,11 @@ body.projects-mode #topbar { display: flex; }
 #project-name-btn {
   display: flex;
   align-items: center;
-  max-width: calc(100% - 32px);  /* leave room for chevron */
+  max-width: calc(100% - 32px);
   padding: 4px 6px;
   background: none;
   border: none;
-  border-radius: 5px;
+  border-radius: 5px 0 0 5px;
   cursor: text;
   text-align: left;
   transition: background 0.1s;
@@ -251,7 +251,7 @@ body.projects-mode #topbar { display: flex; }
 #project-name-btn:hover { background: var(--bg-hover); }
 
 #project-name {
-  font-size: 12px;
+  font-size: 0.8125rem;
   font-weight: 700;
   font-family: 'Inter', system-ui, -apple-system, sans-serif;
   color: var(--text-1);
@@ -266,9 +266,9 @@ body.projects-mode #topbar { display: flex; }
   background: none;
   border: none;
   outline: none;
-  font-size: 12px;
-  font-weight: 600;
-  font-family: inherit;
+  font-size: 0.8125rem;
+  font-weight: 700;
+  font-family: 'Inter', system-ui, -apple-system, sans-serif;
   color: var(--text-1);
   padding: 0;
 }
@@ -283,7 +283,7 @@ body.projects-mode #topbar { display: flex; }
   padding: 0;
   background: none;
   border: none;
-  border-radius: 5px;
+  border-radius: 0 5px 5px 0;
   cursor: pointer;
   color: var(--text-3);
   flex-shrink: 0;
