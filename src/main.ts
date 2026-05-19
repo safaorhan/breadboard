@@ -286,7 +286,7 @@ projectMenuBtn.addEventListener('click', (e) => {
   }
   projectMenuBtn.classList.add('active')
   showSidebarDropdown(projectMenuBtn, [
-    { label: 'Export (.bb)', action: async () => {
+    { label: 'Export Project', action: async () => {
       const all = await getAllProjects()
       const current = all.find(p => p.id === getActiveProjectId())
       if (current) exportProject(current)
