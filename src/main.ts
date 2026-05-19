@@ -1,4 +1,4 @@
-import { state, onStateChange, initDB, setComponentColor, toggleComponentLock, toggleComponentVisibility, rotateComponent, removeComponent, removeWire, selectItem, getActiveProjectId, getActiveProjectName, renameProject, updateThumbnail, openProject, createProject, deleteProjectById, getAllProjects, importProjectData, renameProjectById } from './state'
+import { state, onStateChange, initDB, setComponentColor, toggleComponentLock, toggleComponentVisibility, rotateComponent, removeComponent, removeWire, selectItem, getActiveProjectId, getActiveProjectName, renameProject, updateThumbnail, openProject, createProject, deleteProjectById, getAllProjects, importProjectData, renameProjectById, updateComponentDef } from './state'
 import type { BBFile } from './state'
 import type { Project } from './db'
 import { matchJumper, COPPER_COLOR } from './jumpers'
@@ -1051,6 +1051,40 @@ layersList.addEventListener('click', (e) => {
   else if (action === 'delete') removeComponent(compId)
   else if (action === 'color')  showColorPicker(compId, btn as HTMLElement)
   else                          selectItem(compId, 'component')
+})
+
+layersList.addEventListener('dblclick', (e) => {
+  const li = (e.target as HTMLElement).closest('.layer-item') as HTMLElement | null
+  if (!li) return
+  const compId = li.dataset.compId
+  if (!compId) return
+  const placed = state.placedComponents.find(c => c.id === compId)
+  if (!placed) return
+  const def = state.componentLibrary.find(d => d.id === placed.defId)
+  if (!def) return
+
+  const nameEl = li.querySelector('.layer-name') as HTMLElement
+  if (!nameEl || nameEl.querySelector('input')) return  // already editing
+
+  const input = document.createElement('input')
+  input.type        = 'text'
+  input.value       = def.name
+  input.className   = 'layer-name-input'
+  input.spellcheck  = false
+  nameEl.textContent = ''
+  nameEl.appendChild(input)
+  input.focus()
+  input.select()
+
+  const commit = () => {
+    const newName = input.value.trim() || def.name
+    updateComponentDef(def.id, { ...def, name: newName })
+  }
+  input.addEventListener('blur',    commit)
+  input.addEventListener('keydown', (ev) => {
+    if (ev.key === 'Enter')  { ev.preventDefault(); input.blur() }
+    if (ev.key === 'Escape') { input.value = def.name; input.blur() }
+  })
 })
 
 // --- Wires list ---

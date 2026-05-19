@@ -260,7 +260,7 @@ body.projects-mode #topbar { display: flex; }
 #sidebar-project-row #project-menu-btn:hover { background: var(--bg-hover); }
 
 #project-name {
-  font-size: 0.8125rem;
+  font-size: 13px;
   font-weight: 700;
   font-family: 'Inter', system-ui, -apple-system, sans-serif;
   color: var(--text-1);
@@ -966,6 +966,17 @@ body.projects-mode #topbar { display: flex; }
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+
+.layer-name-input {
+  width: 100%;
+  background: none;
+  border: none;
+  outline: none;
+  font-size: 11px;
+  font-family: inherit;
+  color: var(--text-1);
+  padding: 0;
 }
 
 .layer-actions {
