@@ -18,13 +18,7 @@ export function renderTable(container: HTMLElement, state: AppState): typeof net
   container.innerHTML = ''
 
   const nets = analyzeNets(state)
-  if (nets.length === 0) {
-    const p = document.createElement('p')
-    p.className   = 'conn-empty'
-    p.textContent = 'No connections yet.'
-    container.appendChild(p)
-    return nets
-  }
+  if (nets.length === 0) return nets
 
   function toEndpoint(pin: PinRef): Endpoint {
     const placed   = state.placedComponents.find(c => c.id === pin.componentId)

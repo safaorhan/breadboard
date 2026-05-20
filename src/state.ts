@@ -132,6 +132,8 @@ function getOrCreateUserSet(): JumperSet {
 // ── Apply a project record into in-memory state ───────────────────────────────
 
 function applyProjectToState(project: Project): void {
+  undoStack.length = 0
+  redoStack.length = 0
   activeProject = project
   sessionStorage.setItem(SESSION_KEY, project.id)
 
@@ -175,6 +177,56 @@ export async function initDB(): Promise<void> {
     ?? [...allProjects].sort((a, b) => b.updatedAt - a.updatedAt)[0]
 
   applyProjectToState(project)
+}
+
+// ── Undo / Redo ───────────────────────────────────────────────────────────────
+
+interface Snapshot {
+  placedComponents: PlacedComponent[]
+  wires:            { id: string; from: string; to: string }[]
+  jumperLibrary:    import('./types').JumperDef[]
+}
+
+const MAX_UNDO   = 100
+const undoStack: Snapshot[] = []
+const redoStack: Snapshot[] = []
+
+function captureSnapshot(): Snapshot {
+  return {
+    placedComponents: state.placedComponents.map(c => ({ ...c })),
+    wires:            state.wires.map(w => ({ ...w })),
+    jumperLibrary:    state.jumperLibrary.map(j => ({ ...j })),
+  }
+}
+
+function pushUndo(): void {
+  undoStack.push(captureSnapshot())
+  if (undoStack.length > MAX_UNDO) undoStack.shift()
+  redoStack.length = 0
+}
+
+function applySnapshot(snap: Snapshot): void {
+  state.placedComponents = snap.placedComponents
+  state.wires            = snap.wires
+  state.jumperLibrary    = snap.jumperLibrary
+  if (activeJumperSet) {
+    activeJumperSet.jumpers = [...snap.jumperLibrary]
+    saveActiveJumperSet()
+  }
+}
+
+export function undo(): void {
+  if (undoStack.length === 0) return
+  redoStack.push(captureSnapshot())
+  applySnapshot(undoStack.pop()!)
+  notify()
+}
+
+export function redo(): void {
+  if (redoStack.length === 0) return
+  undoStack.push(captureSnapshot())
+  applySnapshot(redoStack.pop()!)
+  notify()
 }
 
 // ── Core ──────────────────────────────────────────────────────────────────────
@@ -285,6 +337,7 @@ export function setActiveJumperSet(id: string | null): void {
 // ── Jumper library ────────────────────────────────────────────────────────────
 
 export function addJumperDef(color: string, pitch: number): void {
+  pushUndo()
   const set = getOrCreateUserSet()
   set.jumpers.push({ color, pitch })
   state.jumperLibrary = [...set.jumpers]
@@ -294,6 +347,7 @@ export function addJumperDef(color: string, pitch: number): void {
 
 export function removeJumperDef(pitch: number): void {
   if (!activeJumperSet) return
+  pushUndo()
   activeJumperSet.jumpers = activeJumperSet.jumpers.filter(j => j.pitch !== pitch)
   state.jumperLibrary = [...activeJumperSet.jumpers]
   saveActiveJumperSet()
@@ -341,6 +395,7 @@ export function toggleComponentVisibility(id: string): void {
 export function placeComponent(defId: string, anchorCol: number, anchorRow = 'E'): void {
   const def = state.componentLibrary.find(d => d.id === defId)
   if (!def) return
+  pushUndo()
   const placed: PlacedComponent = {
     id: crypto.randomUUID(),
     defId,
@@ -359,6 +414,7 @@ export function placeComponent(defId: string, anchorCol: number, anchorRow = 'E'
 export function moveComponent(id: string, anchorCol: number, anchorRow: string): void {
   const comp = state.placedComponents.find(c => c.id === id)
   if (!comp) return
+  pushUndo()
   comp.anchorCol = anchorCol
   comp.anchorRow = anchorRow
   notify()
@@ -367,6 +423,7 @@ export function moveComponent(id: string, anchorCol: number, anchorRow: string):
 export function removeComponent(id: string): void {
   const comp = state.placedComponents.find(c => c.id === id)
   if (!comp) return
+  pushUndo()
   const def = state.componentLibrary.find(d => d.id === comp.defId)
   if (def) {
     const pinHoles = new Set(def.pins.filter(p => p.name !== '*').map(p => getComponentPinHole(comp, p, def)))
@@ -378,11 +435,13 @@ export function removeComponent(id: string): void {
 
 export function addWire(from: string, to: string): void {
   if (from === to) return
+  pushUndo()
   state.wires.push({ id: crypto.randomUUID(), from, to })
   notify()
 }
 
 export function removeWire(id: string): void {
+  pushUndo()
   state.wires = state.wires.filter(w => w.id !== id)
   notify()
 }
@@ -405,6 +464,7 @@ export function removeComponentDef(id: string): void {
 export function setComponentColor(id: string, colorIdx: number): void {
   const comp = state.placedComponents.find(c => c.id === id)
   if (!comp) return
+  pushUndo()
   comp.colorIdx = colorIdx
   notify()
 }
@@ -412,6 +472,7 @@ export function setComponentColor(id: string, colorIdx: number): void {
 export function setComponentLabel(id: string, label: string): void {
   const comp = state.placedComponents.find(c => c.id === id)
   if (!comp) return
+  pushUndo()
   comp.label = label || undefined
   notify()
 }

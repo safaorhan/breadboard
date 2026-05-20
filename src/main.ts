@@ -1,4 +1,4 @@
-import { state, onStateChange, initDB, setComponentColor, setComponentLabel, toggleComponentLock, toggleComponentVisibility, rotateComponent, removeComponent, removeWire, selectItem, getActiveProjectId, getActiveProjectName, renameProject, updateThumbnail, openProject, createProject, deleteProjectById, getAllProjects, importProjectData, renameProjectById, addComponentDef, updateComponentDef, removeComponentDef } from './state'
+import { state, onStateChange, initDB, setComponentColor, setComponentLabel, toggleComponentLock, toggleComponentVisibility, rotateComponent, removeComponent, removeWire, selectItem, getActiveProjectId, getActiveProjectName, renameProject, updateThumbnail, openProject, createProject, deleteProjectById, getAllProjects, importProjectData, renameProjectById, addComponentDef, updateComponentDef, removeComponentDef, undo, redo } from './state'
 import type { BBFile } from './state'
 import type { Project } from './db'
 import type { ComponentDef } from './types'
@@ -1014,7 +1014,8 @@ function hideColorPicker(): void {
 
 const bomLabel          = document.getElementById('bom-label')          as HTMLElement
 const bomInner          = document.getElementById('bom-inner')          as HTMLDivElement
-const connectionsLabel  = document.getElementById('connections-label')  as HTMLElement
+const connectionsLabel   = document.getElementById('connections-label')   as HTMLElement
+const connectionsDivider = document.getElementById('connections-divider') as HTMLElement
 
 function renderBoM(): void {
   if (!state.wires.length || !state.jumperLibrary.length) {
@@ -1124,6 +1125,10 @@ function update(): void {
   componentsLabel.querySelector('.label-text')!.textContent = `Components (${state.placedComponents.length})`
   wiresLabel.querySelector('.label-text')!.textContent      = `Jumpers (${state.wires.length})`
   lastNets = renderTable(tableInner, state)
+  const hasConnections = lastNets.length > 0
+  connectionsDivider.style.display = hasConnections ? '' : 'none'
+  connectionsLabel.style.display   = hasConnections ? '' : 'none'
+  tableInner.style.display         = hasConnections ? '' : 'none'
   renderLayersPanel(layersList, state.placedComponents, state.componentLibrary, state.selectedId)
   renderWiresList(wiresList, state)
   renderBoM()
@@ -1344,13 +1349,16 @@ wiresList.addEventListener('click', (e) => {
 // --- Keyboard ---
 
 document.addEventListener('keydown', (e) => {
+  const inInput = e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement
   if (e.key === 'Escape') {
     hideContextMenu(); cancelCurrentDrag()
     if (state.selectedId) selectItem(null, null)
   }
-  if (e.key === 'Delete' || e.key === 'Backspace') deleteSelected()
+  if (!inInput && (e.key === 'Delete' || e.key === 'Backspace')) deleteSelected()
   if ((e.ctrlKey || e.metaKey) && e.key === '=')  { e.preventDefault(); setZoom(zoomLevel * 1.25) }
   if ((e.ctrlKey || e.metaKey) && e.key === '-')  { e.preventDefault(); setZoom(zoomLevel / 1.25) }
   if ((e.ctrlKey || e.metaKey) && e.key === '0')  { e.preventDefault(); setZoom(1) }
+  if (!inInput && (e.ctrlKey || e.metaKey) && e.key === 'z' && !e.shiftKey) { e.preventDefault(); undo() }
+  if (!inInput && (e.ctrlKey || e.metaKey) && (e.key === 'y' || (e.key === 'z' && e.shiftKey))) { e.preventDefault(); redo() }
 })
 
