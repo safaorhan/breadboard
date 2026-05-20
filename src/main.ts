@@ -498,10 +498,10 @@ function formatRelativeDate(ts: number): string {
   }).format(new Date(ts))
 }
 
-const CHEVRON_SVG   = `<svg width="12" height="12" viewBox="0 0 16 16" style="pointer-events:none"><use href="#icon-chevron"/></svg>`
-const THREE_DOT_SVG = `<svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor" style="pointer-events:none"><circle cx="12" cy="5" r="2"/><circle cx="12" cy="12" r="2"/><circle cx="12" cy="19" r="2"/></svg>`
-const PENCIL_SVG   = `<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="pointer-events:none"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 013 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>`
-const TRASH_SVG    = `<svg width="12" height="12" viewBox="0 0 24 24" style="pointer-events:none"><use href="#icon-x"/></svg>`
+const CHEVRON_SVG   = `<i class="ph ph-caret-down"           style="pointer-events:none;font-size:10px"></i>`
+const THREE_DOT_SVG = `<i class="ph ph-dots-three-vertical"  style="pointer-events:none;font-size:15px"></i>`
+const PENCIL_SVG    = `<i class="ph ph-pencil-simple"        style="pointer-events:none;font-size:13px"></i>`
+const TRASH_SVG     = `<i class="ph ph-x"                    style="pointer-events:none;font-size:13px"></i>`
 
 async function renderProjectsScreen(): Promise<void> {
   const projects = (await getAllProjects()).sort((a, b) => b.updatedAt - a.updatedAt)

@@ -925,7 +925,6 @@ body.projects-mode #topbar { display: flex; }
   gap: 1px;
   padding: 4px 6px;
   flex-shrink: 0;
-  border-bottom: 1px solid var(--border);
 }
 
 /* Horizontal panel divider */
@@ -1250,7 +1249,7 @@ body.projects-mode #topbar { display: flex; }
 }
 
 /* Show scrim when highlighting */
-svg.has-highlight #scrim-rect { opacity: 0.72; }
+svg.has-highlight #scrim-rect { opacity: 0.5; }
 
 /* Hide non-highlighted wires above the scrim */
 svg.has-highlight .wire-border            { opacity: 0; }
@@ -1380,34 +1379,44 @@ body.projects-mode #projects-screen    { display: flex; }
   height: 48px;
   background: var(--bg-2);
   border: 1px solid var(--border-2);
-  border-radius: 8px;
+  border-radius: 10px;
   box-shadow: 0 4px 16px rgba(0,0,0,0.4), 0 1px 4px rgba(0,0,0,0.3);
   display: flex;
   align-items: center;
-  padding: 0 8px;
-  gap: 4px;
+  padding: 4px;
+  gap: 0;
   z-index: 20;
   pointer-events: all;
 }
 
-#insert-btn {
+.action-btn i { font-size: 20px; line-height: 1; }
+
+.action-btn {
   display: flex;
   align-items: center;
-  gap: 5px;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
   background: none;
   border: none;
   color: var(--text-2);
-  font-size: 11px;
-  font-weight: 500;
-  font-family: inherit;
   cursor: pointer;
-  padding: 6px 10px;
-  border-radius: 5px;
+  border-radius: 7px;
   transition: background 0.1s, color 0.1s;
+  flex-shrink: 0;
 }
-#insert-btn:hover,
-#insert-btn.active { background: var(--bg-hover); color: var(--text-1); }
-#insert-btn.active { color: var(--accent); }
+.action-btn:hover { background: var(--bg-hover); color: var(--text-1); }
+.action-btn:disabled { opacity: 0.35; cursor: default; }
+.action-btn.active,
+#insert-btn.active { background: var(--bg-hover); color: var(--accent); }
+
+.action-bar-sep {
+  width: 1px;
+  height: 20px;
+  background: var(--border-2);
+  margin: 0 4px;
+  flex-shrink: 0;
+}
 
 /* ─── Insert popup ───────────────────────────────────────────────────────── */
 #insert-popup {
@@ -1922,7 +1931,7 @@ html[data-theme="light"] .project-card-thumb { background: #e8e8e8; }
 #theme-toggle .icon-moon { display: none; }
 /* Light mode: hide sun, show moon */
 html[data-theme="light"] #theme-toggle .icon-sun  { display: none; }
-html[data-theme="light"] #theme-toggle .icon-moon { display: block; }
+html[data-theme="light"] #theme-toggle .icon-moon { display: inline-flex; }
 
 /* ─── Light theme overrides ──────────────────────────────────────────────── */
 html[data-theme="light"] {

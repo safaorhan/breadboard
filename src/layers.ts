@@ -3,47 +3,13 @@ import { getColor } from './colors'
 import { wireColor } from './jumpers'
 import { getHolePosition, PITCH } from './board'
 
-// Lucide-style icons (24×24 viewBox, stroke-based)
 const ICON = {
-  eyeOpen: `<svg width="14" height="14" viewBox="0 0 24 24" fill="none"
-      stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
-      style="pointer-events:none">
-    <path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7z"/>
-    <circle cx="12" cy="12" r="3"/>
-  </svg>`,
-
-  eyeClosed: `<svg width="14" height="14" viewBox="0 0 24 24" fill="none"
-      stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
-      style="pointer-events:none">
-    <path d="M17.94 17.94A10.07 10.07 0 0112 20c-7 0-10-8-10-8a18.45 18.45 0 015.06-5.94"/>
-    <path d="M9.9 4.24A9.12 9.12 0 0112 4c7 0 10 8 10 8a18.5 18.5 0 01-2.16 3.19"/>
-    <line x1="1" y1="1" x2="23" y2="23"/>
-  </svg>`,
-
-  lockClosed: `<svg width="14" height="14" viewBox="0 0 24 24" fill="none"
-      stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
-      style="pointer-events:none">
-    <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/>
-    <path d="M7 11V7a5 5 0 0110 0v4"/>
-  </svg>`,
-
-  lockOpen: `<svg width="14" height="14" viewBox="0 0 24 24" fill="none"
-      stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
-      style="pointer-events:none">
-    <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/>
-    <path d="M7 11V7a5 5 0 019.9-1"/>
-  </svg>`,
-
-  rotate: `<svg width="14" height="14" viewBox="0 0 24 24" fill="none"
-      stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
-      style="pointer-events:none">
-    <path d="M21 2v6h-6"/>
-    <path d="M3 12a9 9 0 0115-6.7L21 8"/>
-    <path d="M3 22v-6h6"/>
-    <path d="M21 12a9 9 0 01-15 6.7L3 16"/>
-  </svg>`,
-
-  trash: `<svg width="14" height="14" viewBox="0 0 24 24" style="pointer-events:none"><use href="#icon-x"/></svg>`,
+  eyeOpen:    `<i class="ph ph-eye"              style="pointer-events:none;font-size:14px"></i>`,
+  eyeClosed:  `<i class="ph ph-eye-slash"        style="pointer-events:none;font-size:14px"></i>`,
+  lockClosed: `<i class="ph ph-lock-simple"      style="pointer-events:none;font-size:14px"></i>`,
+  lockOpen:   `<i class="ph ph-lock-simple-open" style="pointer-events:none;font-size:14px"></i>`,
+  rotate:     `<i class="ph ph-arrow-clockwise"  style="pointer-events:none;font-size:14px"></i>`,
+  trash:      `<i class="ph ph-x"               style="pointer-events:none;font-size:14px"></i>`,
 }
 
 export function renderLayersPanel(
