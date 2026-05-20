@@ -1273,8 +1273,6 @@ svg.has-highlight .wire.panel-hover {
   display: flex;
   align-items: center;
   gap: 7px;
-  padding-right: 14px;
-  border-right: 1px solid var(--border-2);
   cursor: pointer;
   border-radius: var(--r);
   padding: 4px 14px 4px 4px;
@@ -1712,6 +1710,67 @@ body.projects-mode #projects-screen    { display: flex; }
   user-select: none;
 }
 
+/* ─── Project delete confirmation dialog ─────────────────────────────────── */
+#project-confirm-dialog {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.5);
+  z-index: 500;
+  display: none;
+  align-items: center;
+  justify-content: center;
+}
+#project-confirm-dialog.visible { display: flex; }
+#project-confirm-box {
+  background: var(--bg-2);
+  border: 1px solid var(--border-2);
+  border-radius: 10px;
+  padding: 20px;
+  width: 300px;
+  box-shadow: 0 16px 48px rgba(0,0,0,0.5);
+}
+#project-confirm-title {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-1);
+  margin-bottom: 8px;
+}
+#project-confirm-msg {
+  font-size: 11.5px;
+  color: var(--text-2);
+  line-height: 1.55;
+  margin: 0 0 18px;
+}
+#project-confirm-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+}
+#project-confirm-cancel {
+  background: none;
+  border: 1px solid var(--border-2);
+  color: var(--text-2);
+  font-size: 11px;
+  font-family: inherit;
+  cursor: pointer;
+  padding: 6px 12px;
+  border-radius: var(--r);
+  transition: color 0.1s, background 0.1s;
+}
+#project-confirm-cancel:hover { color: var(--text-1); background: var(--bg-hover); }
+#project-confirm-ok {
+  background: #c0392b;
+  color: #fff;
+  border: none;
+  font-size: 11px;
+  font-family: inherit;
+  cursor: pointer;
+  padding: 6px 12px;
+  border-radius: var(--r);
+  transition: opacity 0.1s;
+}
+#project-confirm-ok:hover { opacity: 0.85; }
+
 /* ─── Projects screen ────────────────────────────────────────────────────── */
 #projects-screen {
   flex: 1;
@@ -1776,7 +1835,14 @@ html[data-theme="light"] .project-card-thumb { background: #e8e8e8; }
 }
 
 .project-card-info {
-  padding: 10px 12px;
+  padding: 10px 8px 10px 12px;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+.project-card-info-text {
+  flex: 1;
+  min-width: 0;
 }
 .project-card-name {
   font-size: 12px;
@@ -1792,34 +1858,24 @@ html[data-theme="light"] .project-card-thumb { background: #e8e8e8; }
   color: var(--text-3);
 }
 
-/* Card action buttons — visible on hover */
-.project-card-actions {
-  position: absolute;
-  top: 8px;
-  right: 8px;
-  display: flex;
-  gap: 4px;
-  opacity: 0;
-  transition: opacity 0.15s;
-}
-.project-card:hover .project-card-actions { opacity: 1; }
-
-.project-card-btn {
-  width: 26px;
-  height: 26px;
+/* Three-dot menu button in project-card-info */
+.project-card-menu-btn {
+  flex-shrink: 0;
+  width: 28px;
+  height: 28px;
   border-radius: var(--r);
   border: none;
-  background: var(--bg-2);
-  color: var(--text-2);
+  background: none;
+  color: var(--text-3);
   cursor: pointer;
   display: flex;
   align-items: center;
   justify-content: center;
-  transition: background 0.1s, color 0.1s;
-  backdrop-filter: blur(4px);
+  opacity: 0;
+  transition: opacity 0.12s, background 0.1s, color 0.1s;
 }
-.project-card-btn:hover { background: var(--bg-3); color: var(--text-1); }
-.project-card-btn.danger:hover { color: var(--red); }
+.project-card:hover .project-card-menu-btn { opacity: 1; }
+.project-card-menu-btn:hover { background: var(--bg-3); color: var(--text-1); }
 
 /* Inline rename input on card */
 .project-card-name-input {

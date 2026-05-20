@@ -316,6 +316,40 @@ document.addEventListener('click', (e) => {
   }
 })
 
+// ── Project delete confirmation ───────────────────────────────────────────
+
+const projectConfirmDialog = document.getElementById('project-confirm-dialog') as HTMLDivElement
+const projectConfirmMsg    = document.getElementById('project-confirm-msg')    as HTMLParagraphElement
+const projectConfirmCancel = document.getElementById('project-confirm-cancel') as HTMLButtonElement
+const projectConfirmOk     = document.getElementById('project-confirm-ok')     as HTMLButtonElement
+
+let pendingProjectDelete: { project: Project; card: HTMLDivElement } | null = null
+
+function showProjectConfirm(project: Project, card: HTMLDivElement): void {
+  pendingProjectDelete = { project, card }
+  projectConfirmMsg.innerHTML = `Delete <strong>${project.name}</strong>? This cannot be undone.`
+  projectConfirmDialog.classList.add('visible')
+}
+
+function hideProjectConfirm(): void {
+  projectConfirmDialog.classList.remove('visible')
+  pendingProjectDelete = null
+}
+
+projectConfirmCancel.addEventListener('click', hideProjectConfirm)
+
+projectConfirmOk.addEventListener('click', async () => {
+  if (!pendingProjectDelete) return
+  const { project, card } = pendingProjectDelete
+  hideProjectConfirm()
+  await deleteProjectById(project.id)
+  card.remove()
+})
+
+projectConfirmDialog.addEventListener('click', (e) => {
+  if (e.target === projectConfirmDialog) hideProjectConfirm()
+})
+
 // ── Thumbnail capture ─────────────────────────────────────────────────────
 
 // Collect all CSSStyleRules from the document so the serialized SVG
@@ -464,10 +498,10 @@ function formatRelativeDate(ts: number): string {
   }).format(new Date(ts))
 }
 
-const CHEVRON_SVG  = `<svg width="12" height="12" viewBox="0 0 16 16" style="pointer-events:none"><use href="#icon-chevron"/></svg>`
+const CHEVRON_SVG   = `<svg width="12" height="12" viewBox="0 0 16 16" style="pointer-events:none"><use href="#icon-chevron"/></svg>`
+const THREE_DOT_SVG = `<svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor" style="pointer-events:none"><circle cx="12" cy="5" r="2"/><circle cx="12" cy="12" r="2"/><circle cx="12" cy="19" r="2"/></svg>`
 const PENCIL_SVG   = `<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="pointer-events:none"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 013 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>`
 const TRASH_SVG    = `<svg width="12" height="12" viewBox="0 0 24 24" style="pointer-events:none"><use href="#icon-x"/></svg>`
-const DOWNLOAD_SVG = `<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="pointer-events:none"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>`
 
 async function renderProjectsScreen(): Promise<void> {
   const projects = (await getAllProjects()).sort((a, b) => b.updatedAt - a.updatedAt)
@@ -538,52 +572,41 @@ function buildProjectCard(project: Project): HTMLDivElement {
   dateEl.className   = 'project-card-date'
   dateEl.textContent = formatRelativeDate(project.updatedAt)
 
-  info.appendChild(nameEl)
-  info.appendChild(nameInput)
-  info.appendChild(dateEl)
+  // Three-dot menu button
+  const menuBtn = document.createElement('button')
+  menuBtn.className = 'project-card-menu-btn'
+  menuBtn.title     = 'More options'
+  menuBtn.innerHTML = THREE_DOT_SVG
+
+  menuBtn.addEventListener('click', (e) => {
+    e.stopPropagation()
+    if (sidebarDropdown.classList.contains('visible') && sidebarDropdown.dataset.anchor === project.id) {
+      hideSidebarDropdown()
+      return
+    }
+    sidebarDropdown.dataset.anchor = project.id
+    showSidebarDropdown(menuBtn, [
+      { label: 'Rename', action: () => {
+        nameEl.style.display = 'none'
+        nameInput.value      = project.name
+        nameInput.classList.add('visible')
+        nameInput.focus()
+        nameInput.select()
+      }},
+      { label: 'Export', action: () => exportProject(project) },
+      { label: 'Delete', action: () => showProjectConfirm(project, card) },
+    ])
+  })
+
+  const infoText = document.createElement('div')
+  infoText.className = 'project-card-info-text'
+  infoText.appendChild(nameEl)
+  infoText.appendChild(nameInput)
+  infoText.appendChild(dateEl)
+
+  info.appendChild(infoText)
+  info.appendChild(menuBtn)
   card.appendChild(info)
-
-  // Action buttons
-  const actions = document.createElement('div')
-  actions.className = 'project-card-actions'
-
-  const renameBtn = document.createElement('button')
-  renameBtn.className = 'project-card-btn'
-  renameBtn.title     = 'Rename'
-  renameBtn.innerHTML = PENCIL_SVG
-  renameBtn.addEventListener('click', (e) => {
-    e.stopPropagation()
-    nameEl.style.display    = 'none'
-    nameInput.value         = project.name
-    nameInput.classList.add('visible')
-    nameInput.focus()
-    nameInput.select()
-  })
-
-  const exportBtn = document.createElement('button')
-  exportBtn.className = 'project-card-btn'
-  exportBtn.title     = 'Export (.bb)'
-  exportBtn.innerHTML = DOWNLOAD_SVG
-  exportBtn.addEventListener('click', (e) => {
-    e.stopPropagation()
-    exportProject(project)
-  })
-
-  const deleteBtn = document.createElement('button')
-  deleteBtn.className = 'project-card-btn danger'
-  deleteBtn.title     = 'Delete'
-  deleteBtn.innerHTML = TRASH_SVG
-  deleteBtn.addEventListener('click', async (e) => {
-    e.stopPropagation()
-    if (!confirm(`Delete "${project.name}"? This cannot be undone.`)) return
-    await deleteProjectById(project.id)
-    card.remove()
-  })
-
-  actions.appendChild(renameBtn)
-  actions.appendChild(exportBtn)
-  actions.appendChild(deleteBtn)
-  card.appendChild(actions)
 
   // Inline rename handlers
   const commitCardRename = async () => {
