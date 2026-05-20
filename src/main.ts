@@ -1016,6 +1016,8 @@ const bomLabel          = document.getElementById('bom-label')          as HTMLE
 const bomInner          = document.getElementById('bom-inner')          as HTMLDivElement
 const connectionsLabel   = document.getElementById('connections-label')   as HTMLElement
 const connectionsDivider = document.getElementById('connections-divider') as HTMLElement
+const componentsDivider  = document.getElementById('components-divider')  as HTMLElement
+const wiresDivider       = document.getElementById('wires-divider')       as HTMLElement
 
 function renderBoM(): void {
   if (!state.wires.length || !state.jumperLibrary.length) {
@@ -1129,6 +1131,16 @@ function update(): void {
   connectionsDivider.style.display = hasConnections ? '' : 'none'
   connectionsLabel.style.display   = hasConnections ? '' : 'none'
   tableInner.style.display         = hasConnections ? '' : 'none'
+
+  const hasComponents = state.placedComponents.length > 0
+  const hasWires      = state.wires.length > 0
+  componentsDivider.style.display = hasComponents ? '' : 'none'
+  componentsLabel.style.display   = hasComponents ? '' : 'none'
+  layersList.style.display        = hasComponents ? '' : 'none'
+  wiresDivider.style.display    = hasWires ? '' : 'none'
+  wiresLabel.style.display      = hasWires ? '' : 'none'
+  wiresList.style.display       = hasWires ? '' : 'none'
+
   renderLayersPanel(layersList, state.placedComponents, state.componentLibrary, state.selectedId)
   renderWiresList(wiresList, state)
   renderBoM()

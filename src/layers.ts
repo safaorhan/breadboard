@@ -54,13 +54,7 @@ export function renderLayersPanel(
 ): void {
   list.innerHTML = ''
 
-  if (placedComponents.length === 0) {
-    const empty = document.createElement('li')
-    empty.className  = 'layer-empty'
-    empty.textContent = 'No components placed'
-    list.appendChild(empty)
-    return
-  }
+  if (placedComponents.length === 0) return
 
   for (let i = placedComponents.length - 1; i >= 0; i--) {
     const placed = placedComponents[i]
@@ -112,13 +106,7 @@ function resolveEndpoint(hole: string): string {
 export function renderWiresList(list: HTMLElement, state: AppState): void {
   list.innerHTML = ''
 
-  if (state.wires.length === 0) {
-    const empty = document.createElement('li')
-    empty.className   = 'layer-empty'
-    empty.textContent = 'No wires yet'
-    list.appendChild(empty)
-    return
-  }
+  if (state.wires.length === 0) return
 
   const wireLen = (from: string, to: string) => {
     const a = getHolePosition(from), b = getHolePosition(to)
