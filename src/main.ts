@@ -159,7 +159,8 @@ function setZoom(level: number, pivotClientX?: number, pivotClientY?: number): v
 canvasScrollArea.addEventListener('wheel', (e) => {
   if (e.ctrlKey || e.metaKey) {
     e.preventDefault()
-    setZoom(zoomLevel * (e.deltaY < 0 ? 1.1 : 1 / 1.1), e.clientX, e.clientY)
+    const factor = Math.exp(-e.deltaY / 100)
+    setZoom(zoomLevel * factor, e.clientX, e.clientY)
   }
 }, { passive: false })
 
