@@ -23,8 +23,9 @@ const wiresLabel       = document.getElementById('wires-label')         as HTMLE
 const projectNameEl    = document.getElementById('project-name')        as HTMLSpanElement
 const projectNameBtn   = document.getElementById('project-name-btn')    as HTMLButtonElement
 const projectNameInput = document.getElementById('project-name-input')  as HTMLInputElement
-const projectsGrid     = document.getElementById('projects-grid')       as HTMLDivElement
-const examplesGrid     = document.getElementById('examples-grid')       as HTMLDivElement
+const projectsGrid        = document.getElementById('projects-grid')        as HTMLDivElement
+const examplesGrid        = document.getElementById('examples-grid')        as HTMLDivElement
+const footerContributors  = document.getElementById('footer-contributors')  as HTMLDivElement
 const examplesHeading  = document.getElementById('examples-heading')    as HTMLElement
 const newProjectBtn    = document.getElementById('new-project-btn')     as HTMLButtonElement
 const importProjectBtn = document.getElementById('import-project-btn')  as HTMLButtonElement
@@ -514,6 +515,21 @@ async function importProject(): Promise<void> {
 }
 
 // ── Projects screen ───────────────────────────────────────────────────────
+
+let contributorsLoaded = false
+async function loadContributors(): Promise<void> {
+  if (contributorsLoaded) return
+  contributorsLoaded = true
+  try {
+    const res = await fetch('https://api.github.com/repos/safaorhan/breadboard/contributors')
+    if (!res.ok) return
+    const list = await res.json() as { login: string; avatar_url: string; html_url: string }[]
+    footerContributors.innerHTML = list.map(c =>
+      `<a href="${c.html_url}" target="_blank" rel="noopener" title="${c.login}" class="footer-avatar-link">` +
+      `<img src="${c.avatar_url}&s=64" alt="${c.login}" class="footer-avatar" /></a>`
+    ).join('')
+  } catch { /* silently ignore network errors */ }
+}
 
 function formatRelativeDate(ts: number): string {
   const diff  = Date.now() - ts
@@ -1592,6 +1608,7 @@ initDB().then(async () => {
   }
 
   await handleRoute()
+  loadContributors()
 
   if (!document.body.classList.contains('projects-mode')) {
     requestAnimationFrame(() => fitToScreen())

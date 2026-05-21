@@ -65,7 +65,7 @@ body.projects-mode #topbar { display: flex; }
   transition: background 0.1s;
 }
 #app-logo:hover { background: var(--bg-hover); }
-#app-logo img { flex-shrink: 0; }
+#app-logo img { flex-shrink: 0; filter: brightness(0) invert(1); }
 #app-name {
   font-size: 13px;
   font-weight: 700;
@@ -224,6 +224,7 @@ body.projects-mode #topbar { display: flex; }
   transition: background 0.1s, color 0.1s;
 }
 #logo-menu-btn:hover { background: var(--bg-hover); color: var(--text-2); }
+#logo-menu-btn img { filter: brightness(0) invert(1); }
 
 /* Project name row */
 #sidebar-project-row {
@@ -2183,7 +2184,7 @@ body.projects-mode #projects-screen    { display: flex; }
   flex-direction: column;
   overflow-y: auto;
   background: var(--bg);
-  padding: 40px 48px 64px;
+  padding: 40px 48px 80px;
 }
 
 #projects-heading {
@@ -2214,6 +2215,48 @@ body.projects-mode #projects-screen    { display: flex; }
 
 .example-card { cursor: pointer; }
 .example-card:hover { border-color: var(--accent); }
+
+/* ─── Projects footer ───────────────────────────────────────────────────── */
+#projects-footer {
+  position: fixed;
+  bottom: 0; left: 0; right: 0;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 10px;
+  padding: 12px 32px;
+  border-top: 1px solid var(--border-1);
+  background: var(--bg);
+  font-size: 11.5px;
+  color: var(--text-3);
+  flex-wrap: wrap;
+  z-index: 10;
+}
+#footer-title { font-weight: 600; color: var(--text-2); }
+#footer-gh-link {
+  display: flex; align-items: center;
+  color: var(--text-2); text-decoration: none;
+  width: 26px; height: 26px; justify-content: center;
+  padding: 0; border-radius: var(--r);
+  transition: color 0.15s, background 0.15s;
+}
+#footer-gh-link:hover { color: var(--text-1); background: var(--bg-hover); }
+.footer-sep { opacity: 0.25; }
+.footer-heart { white-space: nowrap; }
+#footer-contributors { display: flex; align-items: center; gap: 4px; }
+.footer-avatar-link { display: block; border-radius: 50%; }
+.footer-avatar {
+  width: 22px; height: 22px;
+  border-radius: 50%;
+  display: block;
+  border: 1.5px solid var(--bg);
+  transition: transform 0.15s, box-shadow 0.15s;
+}
+.footer-avatar-link:hover .footer-avatar {
+  transform: scale(1.2);
+  box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+  z-index: 1; position: relative;
+}
 
 .example-badge {
   font-size: 9px;
@@ -2395,6 +2438,9 @@ html[data-theme="light"] {
   --amber:       #d97706;
   --red:         #dc2626;
 }
+
+html[data-theme="light"] #app-logo img,
+html[data-theme="light"] #logo-menu-btn img { filter: none; }
 
 html[data-theme="light"] #canvas-scroll-area {
   background-color: #e8e8e8;
