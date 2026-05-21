@@ -1,6 +1,6 @@
 {
-  "id": "preset-oled",
-  "name": "OLED",
+  "id": "oled",
+  "name": "OLED 0.96",
   "colSpan": 10,
   "rowSpan": 9,
   "pins": [
