@@ -743,6 +743,9 @@ async function handleRoute(): Promise<void> {
   const hash = location.hash.replace(/^#/, '') || '/'
 
   if (hash === '/' || hash === '') {
+    if (!document.body.classList.contains('projects-mode') && getActiveProjectId()) {
+      await captureAndSaveThumbnail()
+    }
     document.body.classList.add('projects-mode')
     await renderProjectsScreen()
     return

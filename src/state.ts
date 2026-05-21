@@ -100,6 +100,7 @@ if (syncChannel) {
 
 function saveStateToDB(): void {
   if (isExternalUpdate) return
+  if (!activeProject.id) return
   activeProject.placedComponents  = state.placedComponents
   activeProject.wires             = state.wires
   activeProject.activeJumperSetId = state.activeJumperSetId
@@ -275,6 +276,7 @@ export async function renameProjectById(id: string, name: string): Promise<void>
 }
 
 export function updateThumbnail(dataURL: string): void {
+  if (!activeProject.id) return
   activeProject.thumbnail = dataURL
   saveProject(activeProject).catch(() => {})
   // No broadcast — thumbnail updates are cosmetic and would cause
