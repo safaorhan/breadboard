@@ -1531,6 +1531,10 @@ function fitToScreen(): void {
   const scaleX  = (area.width  - padding) / SVG_WIDTH
   const scaleY  = (area.height - padding) / SVG_HEIGHT
   setZoom(Math.min(scaleX, scaleY))
+  requestAnimationFrame(() => {
+    canvasScrollArea.scrollLeft = Math.max(0, (canvasScrollArea.scrollWidth  - canvasScrollArea.clientWidth)  / 2)
+    canvasScrollArea.scrollTop  = Math.max(0, (canvasScrollArea.scrollHeight - canvasScrollArea.clientHeight) / 2)
+  })
 }
 
 initDB().then(async () => {
