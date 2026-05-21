@@ -1,6 +1,7 @@
-import { state, onStateChange, initDB, setComponentColor, setComponentLabel, toggleComponentLock, toggleComponentVisibility, rotateComponent, removeComponent, removeWire, selectItem, getActiveProjectId, getActiveProjectName, renameProject, updateThumbnail, openProject, createProject, deleteProjectById, getAllProjects, importProjectData, renameProjectById, addComponentDef, updateComponentDef, removeComponentDef, undo, redo } from './state'
+import { state, onStateChange, initDB, setComponentColor, setComponentLabel, toggleComponentLock, toggleComponentVisibility, rotateComponent, removeComponent, removeWire, selectItem, getActiveProjectId, getActiveProjectName, renameProject, updateThumbnail, openProject, createProject, deleteProjectById, getAllProjects, importProjectData, renameProjectById, addComponentDef, updateComponentDef, removeComponentDef, undo, redo, setActiveJumperSet, createJumperSet, updateJumperSet, deleteJumperSetById, createProjectFromExample } from './state'
+import { EXAMPLE_PROJECTS } from './examples'
 import type { BBFile } from './state'
-import type { Project } from './db'
+import type { Project, StoredJumperSet } from './db'
 import type { ComponentDef } from './types'
 import { matchJumper, COPPER_COLOR } from './jumpers'
 import { COMPONENT_COLORS } from './colors'
@@ -23,6 +24,8 @@ const projectNameEl    = document.getElementById('project-name')        as HTMLS
 const projectNameBtn   = document.getElementById('project-name-btn')    as HTMLButtonElement
 const projectNameInput = document.getElementById('project-name-input')  as HTMLInputElement
 const projectsGrid     = document.getElementById('projects-grid')       as HTMLDivElement
+const examplesGrid     = document.getElementById('examples-grid')       as HTMLDivElement
+const examplesHeading  = document.getElementById('examples-heading')    as HTMLElement
 const newProjectBtn    = document.getElementById('new-project-btn')     as HTMLButtonElement
 const importProjectBtn = document.getElementById('import-project-btn')  as HTMLButtonElement
 const appLogoEl        = document.getElementById('app-logo')            as HTMLDivElement
@@ -30,6 +33,24 @@ const logoMenuBtn      = document.getElementById('logo-menu-btn')       as HTMLB
 const projectMenuBtn   = document.getElementById('project-menu-btn')    as HTMLButtonElement
 const sidebarDropdown  = document.getElementById('sidebar-dropdown')    as HTMLDivElement
 const sidebarDropdownList = document.getElementById('sidebar-dropdown-list') as HTMLUListElement
+const jumperBtn           = document.getElementById('jumper-btn')             as HTMLButtonElement
+const jumperPopup         = document.getElementById('jumper-popup')           as HTMLDivElement
+const jumperSearch        = document.getElementById('jumper-search')          as HTMLInputElement
+const jumperSearchClear   = document.getElementById('jumper-search-clear')    as HTMLButtonElement
+const jumperGrid          = document.getElementById('jumper-grid')            as HTMLDivElement
+const jumperCreateView    = document.getElementById('jumper-create-view')     as HTMLDivElement
+const jumperCreateTitle   = document.getElementById('jumper-create-title')    as HTMLSpanElement
+const jumperCreateCancel  = document.getElementById('jumper-create-cancel')   as HTMLButtonElement
+const jumperSetNameInput  = document.getElementById('jumper-set-name-input')  as HTMLInputElement
+const jumperPitchInput    = document.getElementById('jumper-pitch-input')     as HTMLInputElement
+const jumperAddJumperBtn  = document.getElementById('jumper-add-jumper-btn')  as HTMLButtonElement
+const jumperColorPickerRow= document.getElementById('jumper-color-picker-row')as HTMLDivElement
+const jumperAddedList     = document.getElementById('jumper-added-list')      as HTMLUListElement
+const jumperSaveBtn       = document.getElementById('jumper-save-btn')        as HTMLButtonElement
+const jumperConfirmView   = document.getElementById('jumper-confirm-view')    as HTMLDivElement
+const jumperConfirmNameEl = document.getElementById('jumper-confirm-name')    as HTMLElement
+const jumperConfirmCancel = document.getElementById('jumper-confirm-cancel')  as HTMLButtonElement
+const jumperConfirmOk     = document.getElementById('jumper-confirm-ok')      as HTMLButtonElement
 const insertBtn         = document.getElementById('insert-btn')           as HTMLButtonElement
 const insertPopup       = document.getElementById('insert-popup')         as HTMLDivElement
 const insertSearchView  = document.getElementById('insert-search-view')   as HTMLDivElement
@@ -524,8 +545,54 @@ async function renderProjectsScreen(): Promise<void> {
   projectsGrid.appendChild(newCard)
 
   for (const project of projects) {
-    const card = buildProjectCard(project)
-    projectsGrid.appendChild(card)
+    projectsGrid.appendChild(buildProjectCard(project))
+  }
+
+  // Examples
+  examplesGrid.innerHTML = ''
+  examplesHeading.style.display = EXAMPLE_PROJECTS.length ? '' : 'none'
+  for (const example of EXAMPLE_PROJECTS) {
+    const card = document.createElement('div')
+    card.className = 'project-card example-card'
+
+    const thumb = document.createElement('div')
+    thumb.className = 'project-card-thumb'
+    const ph = document.createElementNS('http://www.w3.org/2000/svg', 'svg')
+    ph.setAttribute('width', '48'); ph.setAttribute('height', '48')
+    ph.setAttribute('viewBox', '0 0 18 18'); ph.setAttribute('fill', 'none')
+    ph.classList.add('project-card-thumb-placeholder')
+    ph.innerHTML = `<rect x="1" y="5" width="16" height="8" rx="1.5" fill="currentColor" opacity="0.3"/>
+      <circle cx="4" cy="9" r="1.4" fill="currentColor"/><circle cx="7" cy="9" r="1.4" fill="currentColor"/>
+      <circle cx="10" cy="9" r="1.4" fill="currentColor"/><circle cx="13" cy="9" r="1.4" fill="currentColor"/>`
+    thumb.appendChild(ph)
+    card.appendChild(thumb)
+
+    const info = document.createElement('div')
+    info.className = 'project-card-info'
+
+    const infoText = document.createElement('div')
+    infoText.className = 'project-card-info-text'
+
+    const nameEl = document.createElement('div')
+    nameEl.className   = 'project-card-name'
+    nameEl.textContent = example.name
+
+    const desc = document.createElement('div')
+    desc.className   = 'project-card-date'
+    desc.textContent = example.description
+
+    infoText.append(nameEl, desc)
+    info.append(infoText)
+    card.appendChild(info)
+
+    card.addEventListener('click', async () => {
+      const id = await createProjectFromExample(example)
+      await openProject(id)
+      showCanvasScreen()
+      showSnackbar(`Created a new project using "${example.name}" template.`)
+    })
+
+    examplesGrid.appendChild(card)
   }
 }
 
@@ -692,6 +759,19 @@ function showCanvasScreen(): void {
   update()
 }
 
+let snackbarTimer: ReturnType<typeof setTimeout> | null = null
+const snackbarEl = document.getElementById('snackbar') as HTMLDivElement
+
+function showSnackbar(message: string, durationMs = 3500): void {
+  if (snackbarTimer) clearTimeout(snackbarTimer)
+  snackbarEl.textContent = message
+  snackbarEl.classList.add('visible')
+  snackbarTimer = setTimeout(() => {
+    snackbarEl.classList.remove('visible')
+    snackbarTimer = null
+  }, durationMs)
+}
+
 appLogoEl.addEventListener('click', () => {
   if (document.body.classList.contains('projects-mode')) {
     showCanvasScreen()
@@ -728,6 +808,303 @@ document.addEventListener('mouseup', () => {
   document.body.style.userSelect = ''
   activeResize = null
   saveUI()
+})
+
+// ── Jumper popup ──────────────────────────────────────────────────────────────
+
+function buildJumperSetItem(set: StoredJumperSet): HTMLElement {
+  const isUser = set.source === 'user'
+
+  const row = document.createElement('div')
+  row.className = ['jumper-set-item', set.id === state.activeJumperSetId ? 'active' : ''].filter(Boolean).join(' ')
+
+  const check = document.createElement('span')
+  check.className = 'jumper-set-check'
+  if (set.id === state.activeJumperSetId) check.innerHTML = `<i class="ph ph-check" style="font-size:12px"></i>`
+
+  const name = document.createElement('span')
+  name.className   = 'jumper-set-name'
+  name.textContent = set.name
+
+  const swatches = document.createElement('span')
+  swatches.className = 'jumper-set-swatches'
+  set.jumpers.slice(0, 6).forEach(j => {
+    const dot = document.createElement('span')
+    dot.className        = 'jumper-set-swatch'
+    dot.style.background = j.color
+    swatches.appendChild(dot)
+  })
+
+  const count = document.createElement('span')
+  count.className   = 'jumper-set-count'
+  count.textContent = `${set.jumpers.length}`
+
+  const actions = document.createElement('div')
+  actions.className = 'jumper-set-actions'
+
+  if (isUser) {
+    const editBtn = document.createElement('button')
+    editBtn.type      = 'button'
+    editBtn.className = 'jumper-set-action-btn'
+    editBtn.title     = 'Edit'
+    editBtn.innerHTML = `<i class="ph ph-pencil-simple" style="pointer-events:none;font-size:13px"></i>`
+    editBtn.addEventListener('click', e => { e.stopPropagation(); showJumperCreateView(set) })
+    actions.appendChild(editBtn)
+  }
+
+  const dupBtn = document.createElement('button')
+  dupBtn.type      = 'button'
+  dupBtn.className = 'jumper-set-action-btn'
+  dupBtn.title     = 'Duplicate'
+  dupBtn.innerHTML = `<i class="ph ph-copy" style="pointer-events:none;font-size:13px"></i>`
+  dupBtn.addEventListener('click', e => {
+    e.stopPropagation()
+    e.preventDefault()
+    createJumperSet(`Copy of ${set.name}`, [...set.jumpers])
+    renderJumperGrid()
+  })
+  actions.appendChild(dupBtn)
+
+  if (isUser) {
+    const delBtn = document.createElement('button')
+    delBtn.type      = 'button'
+    delBtn.className = 'jumper-set-action-btn jumper-set-action-delete'
+    delBtn.title     = 'Delete'
+    delBtn.innerHTML = `<i class="ph ph-x" style="pointer-events:none;font-size:13px"></i>`
+    delBtn.addEventListener('click', e => { e.stopPropagation(); showJumperConfirmView(set.id, set.name) })
+    actions.appendChild(delBtn)
+  }
+
+  row.append(check, name, swatches, count, actions)
+  row.addEventListener('click', (e) => { e.stopPropagation(); setActiveJumperSet(set.id); renderJumperGrid() })
+  return row
+}
+
+function renderJumperGrid(): void {
+  jumperGrid.innerHTML = ''
+  const q = jumperSearch.value.trim().toLowerCase()
+  const sets = state.jumperSets as StoredJumperSet[]
+  const matches = q ? sets.filter(s => s.name.toLowerCase().includes(q)) : sets
+
+  const standard = matches.filter(s => s.source !== 'user')
+  const user     = matches.filter(s => s.source === 'user')
+
+  const sections: { label: string; items: StoredJumperSet[] }[] = []
+  if (standard.length) sections.push({ label: 'Standard Library', items: standard })
+  if (user.length)     sections.push({ label: 'User Library', items: user })
+
+  if (!matches.length) {
+    const empty = document.createElement('div')
+    empty.className   = 'insert-section-header'
+    empty.textContent = 'No results'
+    jumperGrid.appendChild(empty)
+    return
+  }
+
+  for (const { label, items } of sections) {
+    jumperGrid.appendChild(makeInsertSectionHeader(label))
+    for (const set of items) jumperGrid.appendChild(buildJumperSetItem(set))
+  }
+}
+
+function showJumperPopup(): void {
+  hideInsertPopup()
+  jumperPopup.classList.add('visible')
+  jumperBtn.classList.add('active')
+  jumperSearch.value = ''
+  jumperSearchClear.classList.remove('visible')
+  jumperCreateView.style.display  = 'none'
+  jumperConfirmView.style.display = 'none'
+  document.getElementById('jumper-search-view')!.style.display = ''
+  renderJumperGrid()
+  requestAnimationFrame(() => jumperSearch.focus())
+}
+
+function hideJumperPopup(): void {
+  jumperPopup.classList.remove('visible')
+  jumperBtn.classList.remove('active')
+}
+
+jumperBtn.addEventListener('click', () => {
+  if (jumperPopup.classList.contains('visible')) hideJumperPopup()
+  else showJumperPopup()
+})
+
+jumperSearch.addEventListener('input', () => {
+  jumperSearchClear.classList.toggle('visible', jumperSearch.value.length > 0)
+  renderJumperGrid()
+})
+
+jumperSearchClear.addEventListener('click', () => {
+  jumperSearch.value = ''
+  jumperSearchClear.classList.remove('visible')
+  renderJumperGrid()
+  jumperSearch.focus()
+})
+
+// ── Jumper set create view ────────────────────────────────────────────────────
+
+const JUMPER_PRESET_COLORS = [
+  '#e74c3c', '#e67e22', '#f1c40f', '#2ecc71',
+  '#1abc9c', '#3498db', '#9b59b6', '#e91e63',
+  '#ffffff', '#2c3e50',
+]
+
+let newJumpers:          import('./types').JumperDef[] = []
+let selectedJumperColor: string = JUMPER_PRESET_COLORS[0]
+
+function buildJumperColorPicker(): void {
+  jumperColorPickerRow.innerHTML = ''
+
+  JUMPER_PRESET_COLORS.forEach(color => {
+    const btn = document.createElement('button')
+    btn.className        = 'jumper-color-swatch'
+    btn.style.background = color
+    btn.title            = color
+    btn.type             = 'button'
+    if (color === selectedJumperColor) btn.classList.add('selected')
+    btn.addEventListener('click', () => {
+      selectedJumperColor = color
+      jumperColorPickerRow.querySelectorAll('.jumper-color-swatch, .jumper-custom-color-wrap').forEach(el => el.classList.remove('selected'))
+      btn.classList.add('selected')
+    })
+    jumperColorPickerRow.appendChild(btn)
+  })
+
+  // Custom color picker
+  const wrap = document.createElement('label')
+  wrap.className        = 'jumper-custom-color-wrap'
+  wrap.title            = 'Custom color'
+  wrap.style.background = '#888'
+
+  const input = document.createElement('input')
+  input.type  = 'color'
+  input.value = '#888888'
+  input.addEventListener('input', () => {
+    selectedJumperColor   = input.value
+    wrap.style.background = input.value
+    jumperColorPickerRow.querySelectorAll('.jumper-color-swatch, .jumper-custom-color-wrap').forEach(el => el.classList.remove('selected'))
+    wrap.classList.add('selected')
+  })
+
+  wrap.appendChild(input)
+  jumperColorPickerRow.appendChild(wrap)
+}
+
+function renderJumperAddedList(): void {
+  jumperAddedList.innerHTML = ''
+  for (const j of newJumpers) {
+    const li = document.createElement('li')
+    li.className = 'jumper-added-item'
+
+    const dot = document.createElement('span')
+    dot.className        = 'jumper-added-dot'
+    dot.style.background = j.color
+
+    const label = document.createElement('span')
+    label.className   = 'jumper-added-label'
+    label.textContent = `${j.pitch}p`
+
+    const remove = document.createElement('button')
+    remove.className = 'jumper-added-remove'
+    remove.title     = 'Remove'
+    remove.innerHTML = `<i class="ph ph-x" style="pointer-events:none"></i>`
+    remove.addEventListener('click', (e) => {
+      e.stopPropagation()
+      newJumpers = newJumpers.filter(x => x !== j)
+      renderJumperAddedList()
+      updateJumperSaveBtn()
+    })
+
+    li.append(dot, label, remove)
+    jumperAddedList.appendChild(li)
+  }
+}
+
+function updateJumperAddBtn(): void {
+  const pitch = parseInt(jumperPitchInput.value, 10)
+  const pitchOk = !isNaN(pitch) && pitch >= 1
+  const duplicate = newJumpers.some(j => j.pitch === pitch)
+  jumperAddJumperBtn.disabled = !pitchOk || duplicate
+}
+
+function updateJumperSaveBtn(): void {
+  jumperSaveBtn.disabled = !jumperSetNameInput.value.trim() || newJumpers.length === 0
+}
+
+let editingJumperSetId:   string | null = null
+let pendingJumperDeleteId: string | null = null
+
+function showJumperSearchView(): void {
+  jumperCreateView.style.display  = 'none'
+  jumperConfirmView.style.display = 'none'
+  document.getElementById('jumper-search-view')!.style.display = ''
+  editingJumperSetId = null
+  requestAnimationFrame(() => jumperSearch.focus())
+}
+
+function showJumperCreateView(editSet?: StoredJumperSet): void {
+  document.getElementById('jumper-search-view')!.style.display = 'none'
+  jumperConfirmView.style.display = 'none'
+  jumperCreateView.style.display  = ''
+  editingJumperSetId = editSet?.id ?? null
+  jumperCreateTitle.textContent = editSet ? 'Edit Jumper Set' : 'Create Jumper Set'
+  jumperSaveBtn.textContent     = editSet ? 'Save changes'    : 'Save jumper set'
+  newJumpers = editSet ? [...editSet.jumpers] : []
+  selectedJumperColor = JUMPER_PRESET_COLORS[0]
+  jumperSetNameInput.value = editSet?.name ?? ''
+  jumperPitchInput.value   = ''
+  jumperAddJumperBtn.disabled = true
+  updateJumperSaveBtn()
+  buildJumperColorPicker()
+  renderJumperAddedList()
+  requestAnimationFrame(() => jumperSetNameInput.focus())
+}
+
+function showJumperConfirmView(id: string, name: string): void {
+  document.getElementById('jumper-search-view')!.style.display = 'none'
+  jumperCreateView.style.display  = 'none'
+  jumperConfirmView.style.display = ''
+  pendingJumperDeleteId = id
+  jumperConfirmNameEl.textContent = name
+}
+
+document.getElementById('jumper-create-btn')!.addEventListener('click', () => showJumperCreateView())
+jumperCreateCancel.addEventListener('click', showJumperSearchView)
+
+jumperConfirmCancel.addEventListener('click', () => { pendingJumperDeleteId = null; showJumperSearchView() })
+jumperConfirmOk.addEventListener('click', () => {
+  if (pendingJumperDeleteId) { deleteJumperSetById(pendingJumperDeleteId); pendingJumperDeleteId = null }
+  showJumperSearchView()
+  renderJumperGrid()
+})
+
+jumperSetNameInput.addEventListener('input', updateJumperSaveBtn)
+jumperPitchInput.addEventListener('input', updateJumperAddBtn)
+
+jumperAddJumperBtn.addEventListener('click', () => {
+  const pitch = parseInt(jumperPitchInput.value, 10)
+  if (isNaN(pitch) || pitch < 1) return
+  newJumpers = [...newJumpers, { color: selectedJumperColor, pitch }]
+  newJumpers.sort((a, b) => a.pitch - b.pitch)
+  jumperPitchInput.value = ''
+  updateJumperAddBtn()
+  updateJumperSaveBtn()
+  renderJumperAddedList()
+  jumperPitchInput.focus()
+})
+
+jumperSaveBtn.addEventListener('click', () => {
+  const name = jumperSetNameInput.value.trim()
+  if (!name || newJumpers.length === 0) return
+  if (editingJumperSetId) {
+    updateJumperSet(editingJumperSetId, name, newJumpers)
+    editingJumperSetId = null
+  } else {
+    createJumperSet(name, newJumpers)
+  }
+  showJumperSearchView()
+  renderJumperGrid()
 })
 
 // ── Insert popup ─────────────────────────────────────────────────────────────
@@ -847,6 +1224,7 @@ function renderInsertGrid(): void {
 }
 
 function showInsertPopup(): void {
+  hideJumperPopup()
   insertPopup.classList.add('visible')
   insertBtn.classList.add('active')
   insertSearch.value = ''
@@ -1177,15 +1555,19 @@ makeCollapsible(wiresLabel,       wiresList)
 makeCollapsible(connectionsLabel, tableInner)
 makeCollapsible(bomLabel,         bomInner)
 
-// Close insert popup when clicking outside it
+// Close popups when clicking outside
 document.addEventListener('click', (e) => {
   if (
     insertPopup.classList.contains('visible') &&
     !insertPopup.contains(e.target as Node) &&
     !insertBtn.contains(e.target as Node)
-  ) {
-    hideInsertPopup()
-  }
+  ) hideInsertPopup()
+
+  if (
+    jumperPopup.classList.contains('visible') &&
+    !jumperPopup.contains(e.target as Node) &&
+    !jumperBtn.contains(e.target as Node)
+  ) hideJumperPopup()
 })
 
 // --- Context menu ---

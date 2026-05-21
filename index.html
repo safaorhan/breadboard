@@ -123,10 +123,65 @@
 
       </div>
 
+      <!-- Jumper set popup (shown above action bar) -->
+      <div id="jumper-popup">
+
+        <!-- View: search + pick set -->
+        <div id="jumper-search-view">
+          <div id="jumper-search-wrap">
+            <input id="jumper-search" type="text" placeholder="Search jumper sets…" autocomplete="off" spellcheck="false" />
+            <button id="jumper-search-clear" tabindex="-1" title="Clear">×</button>
+          </div>
+          <div id="jumper-grid"></div>
+          <div id="jumper-search-footer">
+            <button id="jumper-create-btn" type="button">Create jumper set</button>
+          </div>
+        </div>
+
+        <!-- View: create jumper set -->
+        <div id="jumper-create-view" style="display:none">
+          <div id="jumper-create-header">
+            <span id="jumper-create-title">Create Jumper Set</span>
+            <button id="jumper-create-cancel" type="button">Cancel</button>
+          </div>
+          <div id="jumper-create-scroll">
+            <div id="jumper-name-wrap">
+              <input id="jumper-set-name-input" type="text" placeholder="Set name…" autocomplete="off" spellcheck="false" maxlength="60" />
+            </div>
+            <div id="jumper-add-section">
+              <div id="jumper-add-row">
+                <input id="jumper-pitch-input" type="number" min="1" max="99" step="1" placeholder="Length (pitch)" autocomplete="off" />
+                <button id="jumper-add-jumper-btn" type="button" disabled>Add</button>
+              </div>
+              <div id="jumper-color-picker-row"></div>
+            </div>
+            <ul id="jumper-added-list"></ul>
+          </div>
+          <div id="jumper-create-footer">
+            <button id="jumper-save-btn" type="button" disabled>Save jumper set</button>
+          </div>
+        </div>
+
+        <!-- View: delete confirmation -->
+        <div id="jumper-confirm-view" style="display:none">
+          <div id="jumper-confirm-header">
+            <span>Delete Jumper Set</span>
+          </div>
+          <div id="jumper-confirm-body">
+            <p>Delete <strong id="jumper-confirm-name"></strong>? This cannot be undone.</p>
+            <div id="jumper-confirm-actions">
+              <button id="jumper-confirm-cancel" type="button">Cancel</button>
+              <button id="jumper-confirm-ok" type="button">Delete</button>
+            </div>
+          </div>
+        </div>
+
+      </div>
+
       <!-- Floating action bar -->
       <div id="action-bar">
-        <button class="action-btn" title="(placeholder)" disabled>
-          <i class="ph ph-cursor" style="pointer-events:none"></i>
+        <button id="jumper-btn" class="action-btn" title="Jumper sets">
+          <i class="ph ph-list" style="pointer-events:none"></i>
         </button>
         <div class="action-bar-sep"></div>
         <button id="insert-btn" class="action-btn" title="Insert component">
@@ -176,6 +231,8 @@
   <div id="projects-screen">
     <h1 id="projects-heading">All Projects</h1>
     <div id="projects-grid"></div>
+    <h2 id="examples-heading">Examples</h2>
+    <div id="examples-grid"></div>
   </div>
 
   <!-- Shared overlays -->
@@ -204,6 +261,8 @@
   <div id="sidebar-dropdown">
     <ul id="sidebar-dropdown-list"></ul>
   </div>
+
+  <div id="snackbar"></div>
 
 <script type="module" src="/src/main.ts"></script>
 </body>

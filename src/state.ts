@@ -11,6 +11,7 @@ import {
   saveComponentDef,
   deleteComponentDef as dbDeleteComponentDef,
   saveJumperSet,
+  deleteJumperSet as dbDeleteJumperSet,
   type Project,
 } from './db'
 
@@ -336,6 +337,39 @@ export function setActiveJumperSet(id: string | null): void {
 
 // ── Jumper library ────────────────────────────────────────────────────────────
 
+export function updateJumperSet(id: string, name: string, jumpers: JumperDef[]): void {
+  const set = allJumperSets.find(s => s.id === id)
+  if (!set) return
+  set.name    = name
+  set.jumpers = [...jumpers]
+  state.jumperSets = [...allJumperSets]
+  saveJumperSet({ ...set }).catch(() => {})
+  if (activeJumperSet?.id === id) state.jumperLibrary = [...jumpers]
+  notify()
+}
+
+export function deleteJumperSetById(id: string): void {
+  allJumperSets = allJumperSets.filter(s => s.id !== id)
+  state.jumperSets = [...allJumperSets]
+  dbDeleteJumperSet(id).catch(() => {})
+  if (activeJumperSet?.id === id) {
+    const fallback = allJumperSets.find(s => s.source !== 'user') ?? allJumperSets[0] ?? null
+    activeJumperSet         = fallback
+    state.activeJumperSetId = fallback?.id ?? null
+    state.jumperLibrary     = fallback ? [...fallback.jumpers] : []
+    activeProject.activeJumperSetId = state.activeJumperSetId
+  }
+  notify()
+}
+
+export function createJumperSet(name: string, jumpers: JumperDef[]): void {
+  const set: StoredJumperSet = { id: crypto.randomUUID(), name, jumpers: [...jumpers], source: 'user' }
+  allJumperSets.push(set)
+  state.jumperSets = [...allJumperSets]
+  saveJumperSet(set).catch(() => {})
+  setActiveJumperSet(set.id)
+}
+
 export function addJumperDef(color: string, pitch: number): void {
   pushUndo()
   const set = getOrCreateUserSet()
@@ -505,6 +539,21 @@ export interface BBFile {
   placedComponents:  PlacedComponent[]
   wires:             { id: string; from: string; to: string }[]
   activeJumperSetId: string | null
+}
+
+export async function createProjectFromExample(example: { name: string; placedComponents: PlacedComponent[]; wires: { id: string; from: string; to: string }[]; activeJumperSetId: string | null }): Promise<string> {
+  const now = Date.now()
+  const project: Project = {
+    id:                crypto.randomUUID(),
+    name:              example.name,
+    createdAt:         now,
+    updatedAt:         now,
+    placedComponents:  example.placedComponents,
+    wires:             example.wires,
+    activeJumperSetId: example.activeJumperSetId,
+  }
+  await saveProject(project)
+  return project.id
 }
 
 export async function importProjectData(data: BBFile): Promise<string> {
