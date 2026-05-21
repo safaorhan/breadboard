@@ -290,12 +290,13 @@ projectNameInput.addEventListener('keydown', (e) => {
 
 function showSidebarDropdown(
   anchor: HTMLElement,
-  items: { label: string; action: () => void }[],
+  items: { label: string; action: () => void; danger?: boolean }[],
 ): void {
   sidebarDropdownList.innerHTML = ''
   for (const item of items) {
     const li = document.createElement('li')
     li.textContent = item.label
+    if (item.danger) li.classList.add('danger')
     li.addEventListener('click', () => { hideSidebarDropdown(); item.action() })
     sidebarDropdownList.appendChild(li)
   }
@@ -328,6 +329,11 @@ projectMenuBtn.addEventListener('click', (e) => {
       const current = all.find(p => p.id === getActiveProjectId())
       if (current) exportProject(current)
     }},
+    { label: 'Delete Project', action: async () => {
+      const all = await getAllProjects()
+      const current = all.find(p => p.id === getActiveProjectId())
+      if (current) showProjectConfirm(current)
+    }, danger: true },
   ])
 })
 
@@ -346,9 +352,9 @@ const projectConfirmMsg    = document.getElementById('project-confirm-msg')    a
 const projectConfirmCancel = document.getElementById('project-confirm-cancel') as HTMLButtonElement
 const projectConfirmOk     = document.getElementById('project-confirm-ok')     as HTMLButtonElement
 
-let pendingProjectDelete: { project: Project; card: HTMLDivElement } | null = null
+let pendingProjectDelete: { project: Project; card: HTMLDivElement | null } | null = null
 
-function showProjectConfirm(project: Project, card: HTMLDivElement): void {
+function showProjectConfirm(project: Project, card: HTMLDivElement | null = null): void {
   pendingProjectDelete = { project, card }
   projectConfirmMsg.innerHTML = `Delete <strong>${project.name}</strong>? This cannot be undone.`
   projectConfirmDialog.classList.add('visible')
@@ -366,7 +372,12 @@ projectConfirmOk.addEventListener('click', async () => {
   const { project, card } = pendingProjectDelete
   hideProjectConfirm()
   await deleteProjectById(project.id)
-  card.remove()
+  if (card) {
+    card.remove()
+  } else {
+    navigate('/')
+    showProjectsScreen()
+  }
 })
 
 projectConfirmDialog.addEventListener('click', (e) => {

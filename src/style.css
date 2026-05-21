@@ -337,6 +337,8 @@ body.projects-mode #topbar { display: flex; }
   background: var(--accent);
   color: #fff;
 }
+#sidebar-dropdown-list li.danger { color: var(--red); }
+#sidebar-dropdown-list li.danger:hover { background: var(--red); color: #fff; }
 .sidebar-dropdown-divider {
   height: 1px;
   background: rgba(255,255,255,0.08);
