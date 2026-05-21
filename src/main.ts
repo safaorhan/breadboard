@@ -459,7 +459,7 @@ function exportProject(project: Project): void {
   const url  = URL.createObjectURL(blob)
   const a    = document.createElement('a')
   a.href     = url
-  a.download = `${project.name.replace(/[^a-z0-9_-]/gi, '_') || 'project'}.bb`
+  a.download = `${project.name.replace(/[^a-z0-9_-]/gi, '_') || 'project'}.json`
   document.body.appendChild(a)
   a.click()
   document.body.removeChild(a)
@@ -469,13 +469,13 @@ function exportProject(project: Project): void {
 async function importProject(): Promise<void> {
   const input    = document.createElement('input')
   input.type     = 'file'
-  input.accept   = '.bb'
+  input.accept   = '.json'
   await new Promise<void>(resolve => {
     input.addEventListener('change', async () => {
       const file = input.files?.[0]
       if (!file) { resolve(); return }
-      if (!file.name.endsWith('.bb')) {
-        alert('Please select a .bb file.')
+      if (!file.name.endsWith('.json')) {
+        alert('Please select a .json file.')
         resolve(); return
       }
       if (file.size > 5 * 1024 * 1024) {
