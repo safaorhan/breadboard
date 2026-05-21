@@ -468,6 +468,19 @@ function exportProject(project: Project): void {
   URL.revokeObjectURL(url)
 }
 
+function downloadComponentDef(def: ComponentDef): void {
+  const { source: _source, ...exportable } = def
+  const blob = new Blob([JSON.stringify(exportable, null, 2)], { type: 'application/json' })
+  const url  = URL.createObjectURL(blob)
+  const a    = document.createElement('a')
+  a.href     = url
+  a.download = `${def.name.replace(/[^a-z0-9_-]/gi, '_') || 'component'}.json`
+  document.body.appendChild(a)
+  a.click()
+  document.body.removeChild(a)
+  URL.revokeObjectURL(url)
+}
+
 async function importProject(): Promise<void> {
   const input    = document.createElement('input')
   input.type     = 'file'
@@ -552,6 +565,7 @@ const CHEVRON_SVG   = `<i class="ph ph-caret-down"           style="pointer-even
 const THREE_DOT_SVG = `<i class="ph ph-dots-three-vertical"  style="pointer-events:none;font-size:15px"></i>`
 const PENCIL_SVG    = `<i class="ph ph-pencil-simple"        style="pointer-events:none;font-size:13px"></i>`
 const TRASH_SVG     = `<i class="ph ph-x"                    style="pointer-events:none;font-size:13px"></i>`
+const DOWNLOAD_SVG  = `<i class="ph ph-download-simple"      style="pointer-events:none;font-size:13px"></i>`
 
 async function renderProjectsScreen(): Promise<void> {
   const projects = (await getAllProjects()).sort((a, b) => b.updatedAt - a.updatedAt)
@@ -1220,6 +1234,16 @@ function buildInsertGridItem(def: ComponentDef): HTMLElement {
       showInsertAddForm(def)
     })
 
+    const downloadBtn = document.createElement('button')
+    downloadBtn.type      = 'button'
+    downloadBtn.className = 'insert-item-action'
+    downloadBtn.title     = 'Download component definition'
+    downloadBtn.innerHTML = DOWNLOAD_SVG
+    downloadBtn.addEventListener('click', (e) => {
+      e.stopPropagation()
+      downloadComponentDef(def)
+    })
+
     const deleteBtn = document.createElement('button')
     deleteBtn.type      = 'button'
     deleteBtn.className = 'insert-item-action insert-item-delete'
@@ -1230,7 +1254,7 @@ function buildInsertGridItem(def: ComponentDef): HTMLElement {
       showInsertConfirmView(def.id, def.name)
     })
 
-    actions.append(editBtn, deleteBtn)
+    actions.append(downloadBtn, editBtn, deleteBtn)
     container.append(nameEl, actions)
     container.addEventListener('click', () => {
       hideInsertPopup()
