@@ -2377,7 +2377,7 @@ html[data-theme="light"] .project-card-thumb { background: #e8e8e8; }
   align-items: center;
   justify-content: center;
   gap: 8px;
-  min-height: 160px;
+  aspect-ratio: 16 / 13;
   color: var(--text-3);
   font-size: 11px;
   transition: border-color 0.15s, color 0.15s, background 0.15s;
