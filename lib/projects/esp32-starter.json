@@ -1,4 +1,5 @@
 {
+  "version": 1,
   "name": "ESP32 Starter",
   "description": "ESP32 development board placed and ready to wire up.",
   "placedComponents": [

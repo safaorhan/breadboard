@@ -444,6 +444,8 @@ function scheduleThumbnail(): void {
 // ── Import / export ───────────────────────────────────────────────────────
 
 function exportProject(project: Project): void {
+  const usedDefIds = new Set(project.placedComponents.map(c => c.defId))
+  const usedDefs   = state.componentLibrary.filter(d => usedDefIds.has(d.id))
   const data: BBFile = {
     version:           1,
     name:              project.name,
@@ -451,6 +453,7 @@ function exportProject(project: Project): void {
     placedComponents:  project.placedComponents,
     wires:             project.wires,
     activeJumperSetId: project.activeJumperSetId ?? null,
+    ...(usedDefs.length ? { componentDefs: usedDefs } : {}),
   }
   const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' })
   const url  = URL.createObjectURL(blob)
@@ -493,7 +496,15 @@ async function importProject(): Promise<void> {
         alert('File is not a valid Breadboard project.')
         resolve(); return
       }
-      const id = await importProjectData(data as BBFile)
+      const bb = data as BBFile
+      const newDefs = (bb.componentDefs ?? []).filter(
+        d => !state.componentLibrary.some(e => e.id === d.id)
+      )
+      if (newDefs.length > 0) {
+        const confirmed = await showImportConfirm(newDefs)
+        if (!confirmed) { resolve(); return }
+      }
+      const id = await importProjectData(bb)
       await openProject(id)
       showCanvasScreen()
       resolve()
@@ -579,7 +590,7 @@ async function renderProjectsScreen(): Promise<void> {
 
     const desc = document.createElement('div')
     desc.className   = 'project-card-date'
-    desc.textContent = example.description
+    desc.textContent = example.description ?? ''
 
     infoText.append(nameEl, desc)
     info.append(infoText)
@@ -758,6 +769,41 @@ function showCanvasScreen(): void {
   syncProjectName()
   update()
 }
+
+// ── Import confirmation ───────────────────────────────────────────────────────
+
+const importConfirmDialog = document.getElementById('import-confirm-dialog') as HTMLDivElement
+const importConfirmBody   = document.getElementById('import-confirm-body')   as HTMLDivElement
+const importConfirmCancel = document.getElementById('import-confirm-cancel') as HTMLButtonElement
+const importConfirmOk     = document.getElementById('import-confirm-ok')     as HTMLButtonElement
+
+function showImportConfirm(newDefs: import('./types').ComponentDef[]): Promise<boolean> {
+  return new Promise(resolve => {
+    const count = newDefs.length
+    importConfirmBody.innerHTML =
+      `<p>This project includes <strong>${count} component${count > 1 ? 's' : ''}</strong> ` +
+      `that will be added to your library:</p>` +
+      `<ul>${newDefs.map(d => `<li>${d.name}</li>`).join('')}</ul>`
+    importConfirmDialog.classList.add('visible')
+
+    const cleanup = (result: boolean) => {
+      importConfirmDialog.classList.remove('visible')
+      importConfirmOk.removeEventListener('click', onOk)
+      importConfirmCancel.removeEventListener('click', onCancel)
+      importConfirmDialog.removeEventListener('click', onBackdrop)
+      resolve(result)
+    }
+    const onOk      = () => cleanup(true)
+    const onCancel  = () => cleanup(false)
+    const onBackdrop = (e: MouseEvent) => { if (e.target === importConfirmDialog) cleanup(false) }
+
+    importConfirmOk.addEventListener('click', onOk)
+    importConfirmCancel.addEventListener('click', onCancel)
+    importConfirmDialog.addEventListener('click', onBackdrop)
+  })
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
 
 let snackbarTimer: ReturnType<typeof setTimeout> | null = null
 const snackbarEl = document.getElementById('snackbar') as HTMLDivElement

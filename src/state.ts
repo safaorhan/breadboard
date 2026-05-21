@@ -533,24 +533,43 @@ export function selectItem(id: string | null, type: 'component' | 'wire' | null)
 }
 
 export interface BBFile {
-  version:           number
+  version?:          number
   name:              string
-  createdAt:         number
+  description?:      string
+  createdAt?:        number
   placedComponents:  PlacedComponent[]
   wires:             { id: string; from: string; to: string }[]
   activeJumperSetId: string | null
+  componentDefs?:    ComponentDef[]
 }
 
-export async function createProjectFromExample(example: { name: string; placedComponents: PlacedComponent[]; wires: { id: string; from: string; to: string }[]; activeJumperSetId: string | null }): Promise<string> {
+async function restoreEmbeddedDefs(defs: ComponentDef[]): Promise<void> {
+  const systemIds = new Set(state.componentLibrary.filter(d => d.source !== 'user').map(d => d.id))
+  const userIds   = new Set(state.componentLibrary.filter(d => d.source === 'user').map(d => d.id))
+  for (const def of defs) {
+    const isSystem = def.source !== 'user'
+    if (isSystem) {
+      if (systemIds.has(def.id) || userIds.has(def.id)) continue
+    } else {
+      if (userIds.has(def.id) || systemIds.has(def.id)) continue
+    }
+    const stored = { ...def, source: 'user' as const }
+    state.componentLibrary.push(stored)
+    await saveComponentDef(stored)
+  }
+}
+
+export async function createProjectFromExample(data: BBFile): Promise<string> {
   const now = Date.now()
+  if (data.componentDefs?.length) await restoreEmbeddedDefs(data.componentDefs)
   const project: Project = {
     id:                crypto.randomUUID(),
-    name:              example.name,
+    name:              data.name,
     createdAt:         now,
     updatedAt:         now,
-    placedComponents:  example.placedComponents,
-    wires:             example.wires,
-    activeJumperSetId: example.activeJumperSetId,
+    placedComponents:  data.placedComponents,
+    wires:             data.wires,
+    activeJumperSetId: data.activeJumperSetId ?? null,
   }
   await saveProject(project)
   return project.id
@@ -558,6 +577,7 @@ export async function createProjectFromExample(example: { name: string; placedCo
 
 export async function importProjectData(data: BBFile): Promise<string> {
   const now: number = Date.now()
+  if (data.componentDefs?.length) await restoreEmbeddedDefs(data.componentDefs)
   const project: Project = {
     id:                crypto.randomUUID(),
     name:              data.name || 'Imported',
