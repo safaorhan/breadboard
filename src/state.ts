@@ -28,10 +28,7 @@ export const state: AppState = {
 
 const listeners: (() => void)[] = []
 let nextColorIdx    = 0
-let activeProject: Project = {
-  id: '', name: 'Untitled', createdAt: 0, updatedAt: 0,
-  placedComponents: [], wires: [], activeJumperSetId: null,
-}
+let activeProject: Project | null = null
 let activeJumperSet: JumperSet | null = null
 let allJumperSets:   StoredJumperSet[] = []
 
@@ -78,7 +75,7 @@ if (syncChannel) {
   syncChannel.onmessage = async (event: MessageEvent<{ type: string; projectId: string }>) => {
     const { type, projectId } = event.data
 
-    if (type === 'project-saved' && projectId === activeProject.id) {
+    if (type === 'project-saved' && projectId === activeProject?.id) {
       // Another tab saved our project — reload the fresh version from DB.
       const fresh = await loadProject(projectId)
       if (!fresh) return
@@ -88,9 +85,10 @@ if (syncChannel) {
       isExternalUpdate = false
     }
 
-    if (type === 'project-deleted' && projectId === activeProject.id) {
+    if (type === 'project-deleted' && projectId === activeProject?.id) {
       const remaining = (await loadAllProjects()).sort((a, b) => b.updatedAt - a.updatedAt)
       if (remaining.length > 0) applyProjectToState(remaining[0])
+      else                      activeProject = null
       notifyListenersOnly()
     }
   }
@@ -100,12 +98,13 @@ if (syncChannel) {
 
 function saveStateToDB(): void {
   if (isExternalUpdate) return
-  if (!activeProject.id) return
-  activeProject.placedComponents  = state.placedComponents
-  activeProject.wires             = state.wires
-  activeProject.activeJumperSetId = state.activeJumperSetId
-  saveProject(activeProject)
-    .then(() => scheduleBroadcastSave(activeProject.id))
+  const current = activeProject
+  if (!current) return
+  current.placedComponents  = state.placedComponents
+  current.wires             = state.wires
+  current.activeJumperSetId = state.activeJumperSetId
+  saveProject(current)
+    .then(() => scheduleBroadcastSave(current.id))
     .catch(() => {})
 }
 
@@ -117,9 +116,9 @@ function saveActiveJumperSet(): void {
 function getOrCreateUserSet(): JumperSet {
   if (activeJumperSet) return activeJumperSet
   const set: JumperSet = { id: crypto.randomUUID(), name: 'My Jumpers', jumpers: [] }
-  activeJumperSet                 = set
-  state.activeJumperSetId         = set.id
-  activeProject.activeJumperSetId = set.id
+  activeJumperSet         = set
+  state.activeJumperSetId = set.id
+  if (activeProject) activeProject.activeJumperSetId = set.id
   saveJumperSet({ ...set, source: 'user' }).catch(() => {})
   return set
 }
@@ -149,8 +148,8 @@ function applyProjectToState(project: Project): void {
   state.jumperLibrary     = activeJumperSet ? [...activeJumperSet.jumpers] : []
 
   if (state.activeJumperSetId !== project.activeJumperSetId) {
-    activeProject.activeJumperSetId = state.activeJumperSetId
-    saveProject(activeProject).catch(() => {})
+    project.activeJumperSetId = state.activeJumperSetId
+    saveProject(project).catch(() => {})
   }
 
   const maxIdx = state.placedComponents.reduce((m, p) => Math.max(m, p.colorIdx), -1)
@@ -251,22 +250,24 @@ export function _resetStateForTest(library: ComponentDef[]): void {
 
 // ── Project management ────────────────────────────────────────────────────────
 
-export function getActiveProjectId():   string { return activeProject.id }
-export function getActiveProjectName(): string { return activeProject.name }
+export function getActiveProjectId():   string | null { return activeProject?.id   ?? null }
+export function getActiveProjectName(): string | null { return activeProject?.name ?? null }
 
 export async function getAllProjects(): Promise<Project[]> {
   return loadAllProjects()
 }
 
 export function renameProject(name: string): void {
-  activeProject.name = name.trim() || 'Untitled'
-  saveProject(activeProject)
-    .then(() => broadcastImmediate('project-saved', activeProject.id))
+  const current = activeProject
+  if (!current) return
+  current.name = name.trim() || 'Untitled'
+  saveProject(current)
+    .then(() => broadcastImmediate('project-saved', current.id))
     .catch(() => {})
 }
 
 export async function renameProjectById(id: string, name: string): Promise<void> {
-  if (id === activeProject.id) { renameProject(name); return }
+  if (id === activeProject?.id) { renameProject(name); return }
   const project = await loadProject(id)
   if (!project) return
   project.name = name.trim() || 'Untitled'
@@ -276,9 +277,10 @@ export async function renameProjectById(id: string, name: string): Promise<void>
 }
 
 export function updateThumbnail(dataURL: string): void {
-  if (!activeProject.id) return
-  activeProject.thumbnail = dataURL
-  saveProject(activeProject).catch(() => {})
+  const current = activeProject
+  if (!current) return
+  current.thumbnail = dataURL
+  saveProject(current).catch(() => {})
   // No broadcast — thumbnail updates are cosmetic and would cause
   // unnecessary reloads in other tabs.
 }
@@ -308,9 +310,10 @@ export async function createProject(): Promise<string> {
 export async function deleteProjectById(id: string): Promise<void> {
   await dbDeleteProject(id)
   broadcastImmediate('project-deleted', id)
-  if (id === activeProject.id) {
+  if (id === activeProject?.id) {
     const remaining = (await loadAllProjects()).sort((a, b) => b.updatedAt - a.updatedAt)
     if (remaining.length > 0) { applyProjectToState(remaining[0]); notify() }
+    else                      { activeProject = null }
   }
 }
 
@@ -344,7 +347,7 @@ export function deleteJumperSetById(id: string): void {
     activeJumperSet         = fallback
     state.activeJumperSetId = fallback?.id ?? null
     state.jumperLibrary     = fallback ? [...fallback.jumpers] : []
-    activeProject.activeJumperSetId = state.activeJumperSetId
+    if (activeProject) activeProject.activeJumperSetId = state.activeJumperSetId
   }
   notify()
 }

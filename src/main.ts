@@ -258,7 +258,7 @@ themeToggleBtn.addEventListener('click', () => {
 
 function syncProjectName(): void {
   if (document.activeElement !== projectNameInput) {
-    projectNameEl.textContent = getActiveProjectName()
+    projectNameEl.textContent = getActiveProjectName() ?? ''
   }
 }
 
@@ -273,7 +273,8 @@ function commitProjectRename(): void {
 
 projectNameBtn.addEventListener('click', () => {
   if (projectNameInput.classList.contains('visible')) return
-  projectNameInput.value = getActiveProjectName()
+  if (!getActiveProjectId()) return
+  projectNameInput.value = getActiveProjectName() ?? ''
   projectNameEl.style.display    = 'none'
   projectNameInput.style.display = ''
   projectNameInput.classList.add('visible')
@@ -283,7 +284,7 @@ projectNameBtn.addEventListener('click', () => {
 projectNameInput.addEventListener('blur',    commitProjectRename)
 projectNameInput.addEventListener('keydown', (e) => {
   if (e.key === 'Enter')  { e.preventDefault(); projectNameInput.blur() }
-  if (e.key === 'Escape') { projectNameInput.value = getActiveProjectName(); projectNameInput.blur() }
+  if (e.key === 'Escape') { projectNameInput.value = getActiveProjectName() ?? ''; projectNameInput.blur() }
 })
 
 // ── Sidebar dropdown ──────────────────────────────────────────────────────
@@ -768,11 +769,18 @@ async function handleRoute(): Promise<void> {
     return
   }
 
-  // Unknown hash — fall back to current project
-  navigate(`/project/${getActiveProjectId()}`, true)
-  document.body.classList.remove('projects-mode')
-  syncProjectName()
-  update()
+  // Unknown hash — fall back to the active project, or to the projects screen
+  const activeId = getActiveProjectId()
+  if (activeId) {
+    navigate(`/project/${activeId}`, true)
+    document.body.classList.remove('projects-mode')
+    syncProjectName()
+    update()
+  } else {
+    navigate('/', true)
+    document.body.classList.add('projects-mode')
+    await renderProjectsScreen()
+  }
 }
 
 async function showProjectsScreen(): Promise<void> {
@@ -783,7 +791,9 @@ async function showProjectsScreen(): Promise<void> {
 }
 
 function showCanvasScreen(): void {
-  navigate(`/project/${getActiveProjectId()}`)
+  const activeId = getActiveProjectId()
+  if (!activeId) return
+  navigate(`/project/${activeId}`)
   document.body.classList.remove('projects-mode')
   syncProjectName()
   update()
