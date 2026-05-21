@@ -89,15 +89,8 @@ if (syncChannel) {
     }
 
     if (type === 'project-deleted' && projectId === activeProject.id) {
-      // Another tab deleted the project we have open — switch to the next one.
       const remaining = (await loadAllProjects()).sort((a, b) => b.updatedAt - a.updatedAt)
-      if (remaining.length > 0) {
-        applyProjectToState(remaining[0])
-      } else {
-        const newId  = await createProject()
-        const fresh  = await loadProject(newId)
-        if (fresh) applyProjectToState(fresh)
-      }
+      if (remaining.length > 0) applyProjectToState(remaining[0])
       notifyListenersOnly()
     }
   }
@@ -314,16 +307,8 @@ export async function deleteProjectById(id: string): Promise<void> {
   await dbDeleteProject(id)
   broadcastImmediate('project-deleted', id)
   if (id === activeProject.id) {
-    const remaining = await loadAllProjects()
-    if (remaining.length > 0) {
-      const next = [...remaining].sort((a, b) => b.updatedAt - a.updatedAt)[0]
-      applyProjectToState(next)
-      notify()
-    } else {
-      const newId = await createProject()
-      const fresh = await loadProject(newId)
-      if (fresh) { applyProjectToState(fresh); notify() }
-    }
+    const remaining = (await loadAllProjects()).sort((a, b) => b.updatedAt - a.updatedAt)
+    if (remaining.length > 0) { applyProjectToState(remaining[0]); notify() }
   }
 }
 
