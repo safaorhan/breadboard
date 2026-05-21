@@ -207,19 +207,8 @@ export async function initializeDB(): Promise<DBInitResult> {
   }
 
   // Ensure at least one project exists
-  let allProjects = await loadAllProjects()
-  if (allProjects.length === 0) {
-    const migratedId = await migrateFromLocalStorage()
-    if (!migratedId) {
-      const now = Date.now()
-      await saveProject({
-        id: crypto.randomUUID(), name: 'Untitled',
-        createdAt: now, updatedAt: now,
-        placedComponents: [], wires: [], activeJumperSetId: null,
-      })
-    }
-    allProjects = await loadAllProjects()
-  }
+  await migrateFromLocalStorage()
+  const allProjects = await loadAllProjects()
 
   const componentDefs = await loadAllComponentDefs()
   const jumperSets    = await loadAllJumperSets()

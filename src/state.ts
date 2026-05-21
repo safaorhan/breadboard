@@ -172,12 +172,12 @@ export async function initDB(): Promise<void> {
   state.jumperSets = jumperSets
   state.componentLibrary = componentDefs
 
-  // Pick active project: sessionStorage → most recently modified
+  // Pick active project: sessionStorage → most recently modified (may be undefined if no projects)
   const sessionId = sessionStorage.getItem(SESSION_KEY)
   const project   = allProjects.find(p => p.id === sessionId)
     ?? [...allProjects].sort((a, b) => b.updatedAt - a.updatedAt)[0]
 
-  applyProjectToState(project)
+  if (project) applyProjectToState(project)
 }
 
 // ── Undo / Redo ───────────────────────────────────────────────────────────────

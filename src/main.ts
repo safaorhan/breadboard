@@ -1604,7 +1604,8 @@ initDB().then(async () => {
 
   // Set a default URL if the page was opened with no hash
   if (!location.hash || location.hash === '#') {
-    navigate(`/project/${getActiveProjectId()}`, true)
+    const activeId = getActiveProjectId()
+    navigate(activeId ? `/project/${activeId}` : '/', true)
   }
 
   await handleRoute()
