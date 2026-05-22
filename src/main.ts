@@ -1558,10 +1558,10 @@ let bomHoverIds: string[] = []
 
 function setBomHover(wireIds: string[]): void {
   for (const id of bomHoverIds)
-    svg.querySelector(`[data-wire-id="${id}"]`)?.classList.remove('panel-hover')
+    svg.querySelector(`[data-wire-id-hi="${id}"]`)?.classList.remove('panel-hover')
   bomHoverIds = []
   for (const id of wireIds) {
-    const el = svg.querySelector(`[data-wire-id="${id}"]`)
+    const el = svg.querySelector(`[data-wire-id-hi="${id}"]`)
     if (el) { el.classList.add('panel-hover'); bomHoverIds.push(id) }
   }
   svg.classList.toggle('has-highlight', bomHoverIds.length > 0)
@@ -1580,13 +1580,13 @@ let tableHoverIds: string[] = []
 
 function setTableHover(netRoot: string | null): void {
   for (const id of tableHoverIds)
-    svg.querySelector(`[data-wire-id="${id}"]`)?.classList.remove('panel-hover')
+    svg.querySelector(`[data-wire-id-hi="${id}"]`)?.classList.remove('panel-hover')
   tableHoverIds = []
   if (netRoot) {
     const net = lastNets.find(n => n.root === netRoot)
     if (net) {
       for (const id of net.wireIds) {
-        const el = svg.querySelector(`[data-wire-id="${id}"]`)
+        const el = svg.querySelector(`[data-wire-id-hi="${id}"]`)
         if (el) { el.classList.add('panel-hover'); tableHoverIds.push(id) }
       }
     }
@@ -1820,11 +1820,11 @@ let panelHoveredWireId: string | null = null
 
 function setPanelWireHover(wireId: string | null): void {
   if (panelHoveredWireId) {
-    svg.querySelector(`[data-wire-id="${panelHoveredWireId}"]`)?.classList.remove('panel-hover')
+    svg.querySelector(`[data-wire-id-hi="${panelHoveredWireId}"]`)?.classList.remove('panel-hover')
   }
   panelHoveredWireId = wireId
   if (wireId) {
-    svg.querySelector(`[data-wire-id="${wireId}"]`)?.classList.add('panel-hover')
+    svg.querySelector(`[data-wire-id-hi="${wireId}"]`)?.classList.add('panel-hover')
   }
   svg.classList.toggle('has-highlight', wireId !== null)
 }

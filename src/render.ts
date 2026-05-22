@@ -28,11 +28,11 @@ export function initSVG(container: HTMLElement): SVGSVGElement {
   svg.setAttribute('viewBox', `0 0 ${SVG_WIDTH} ${SVG_HEIGHT}`)
   svg.setAttribute('fill',    '#faf8f4')  // inherited default for child elements
 
-  for (const id of ['board-layer', 'component-layer']) {
+  for (const id of ['board-layer', 'wire-layer', 'component-layer']) {
     const g = svgEl('g'); g.id = id; svg.appendChild(g)
   }
 
-  // Scrim: full-board dimming rect, sits above components but below wires
+  // Scrim: full-board dimming rect, sits above board/wires/components but below highlighted wires
   const scrimLayer = svgEl('g')
   scrimLayer.id = 'scrim-layer'
   const scrimRect = svgEl('rect')
@@ -45,7 +45,7 @@ export function initSVG(container: HTMLElement): SVGSVGElement {
   scrimLayer.appendChild(scrimRect)
   svg.appendChild(scrimLayer)
 
-  for (const id of ['wire-layer', 'preview-layer']) {
+  for (const id of ['highlight-wire-layer', 'preview-layer']) {
     const g = svgEl('g'); g.id = id; svg.appendChild(g)
   }
 
@@ -70,6 +70,7 @@ export function render(svg: SVGSVGElement, state: AppState): void {
   clearLayer(svg, 'board-layer')
   clearLayer(svg, 'wire-layer')
   clearLayer(svg, 'component-layer')
+  clearLayer(svg, 'highlight-wire-layer')
   renderBoardLayer(svg, state)
   renderWireLayer(svg, state)
   renderComponentLayer(svg, state)
@@ -341,6 +342,7 @@ function computeWireRenderOrder(wires: Wire[]): Wire[] {
 
 function renderWireLayer(svg: SVGSVGElement, state: AppState): void {
   const layer    = getLayer(svg, 'wire-layer')
+  const hiLayer  = getLayer(svg, 'highlight-wire-layer')
   const yOffsets = computeWireYOffsets(state.wires)
 
   function wireCoords(wire: { from: string; to: string }, yOff: number) {
@@ -355,20 +357,30 @@ function renderWireLayer(svg: SVGSVGElement, state: AppState): void {
     const yOff       = yOffsets.get(wire.id) ?? 0
     const { x1, y1, x2, y2 } = wireCoords(wire, yOff)
     const isSelected = wire.id === state.selectedId
+    const color      = wireColor(wire.from, wire.to, state.jumperLibrary)
 
-    const line = svgEl('line')
-    line.setAttribute('x1', String(x1)); line.setAttribute('y1', String(y1))
-    line.setAttribute('x2', String(x2)); line.setAttribute('y2', String(y2))
-    line.setAttribute('class', isSelected ? 'wire selected' : 'wire')
-    line.style.stroke = wireColor(wire.from, wire.to, state.jumperLibrary)
-    line.dataset.wireId = wire.id
     const border = svgEl('line')
     border.setAttribute('x1', String(x1)); border.setAttribute('y1', String(y1))
     border.setAttribute('x2', String(x2)); border.setAttribute('y2', String(y2))
     border.setAttribute('class', 'wire-border')
     layer.appendChild(border)
 
+    const line = svgEl('line')
+    line.setAttribute('x1', String(x1)); line.setAttribute('y1', String(y1))
+    line.setAttribute('x2', String(x2)); line.setAttribute('y2', String(y2))
+    line.setAttribute('class', isSelected ? 'wire selected' : 'wire')
+    line.style.stroke = color
+    line.dataset.wireId = wire.id
     layer.appendChild(line)
+
+    // Invisible copy in highlight layer — made visible above scrim+components on hover
+    const hiLine = svgEl('line')
+    hiLine.setAttribute('x1', String(x1)); hiLine.setAttribute('y1', String(y1))
+    hiLine.setAttribute('x2', String(x2)); hiLine.setAttribute('y2', String(y2))
+    hiLine.setAttribute('class', 'wire-hi')
+    hiLine.style.stroke = color
+    hiLine.dataset.wireIdHi = wire.id
+    hiLayer.appendChild(hiLine)
   }
 }
 
