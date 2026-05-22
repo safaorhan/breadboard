@@ -395,7 +395,7 @@ export function rotateComponent(id: string): void {
   if (!comp) return
   const def = state.componentLibrary.find(d => d.id === comp.defId)
   if (def) {
-    const pinHoles = new Set(def.pins.filter(p => p.name !== '*').map(p => getComponentPinHole(comp, p, def)))
+    const pinHoles = new Set(def.pins.map(p => getComponentPinHole(comp, p, def)))
     state.wires = state.wires.filter(w => !pinHoles.has(w.from) && !pinHoles.has(w.to))
   }
   comp.rotated = !comp.rotated
@@ -450,7 +450,7 @@ export function removeComponent(id: string): void {
   pushUndo()
   const def = state.componentLibrary.find(d => d.id === comp.defId)
   if (def) {
-    const pinHoles = new Set(def.pins.filter(p => p.name !== '*').map(p => getComponentPinHole(comp, p, def)))
+    const pinHoles = new Set(def.pins.map(p => getComponentPinHole(comp, p, def)))
     state.wires = state.wires.filter(w => !pinHoles.has(w.from) && !pinHoles.has(w.to))
   }
   state.placedComponents = state.placedComponents.filter(c => c.id !== id)
@@ -475,7 +475,7 @@ export function removeComponentDef(id: string): void {
   const def       = state.componentLibrary.find(d => d.id === id)
   if (def) {
     for (const comp of instances) {
-      const pinHoles = new Set(def.pins.filter(p => p.name !== '*').map(p => getComponentPinHole(comp, p, def)))
+      const pinHoles = new Set(def.pins.map(p => getComponentPinHole(comp, p, def)))
       state.wires = state.wires.filter(w => !pinHoles.has(w.from) && !pinHoles.has(w.to))
     }
   }

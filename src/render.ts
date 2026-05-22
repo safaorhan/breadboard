@@ -506,7 +506,6 @@ function renderPlacedComponent(
   }
 
   for (const pin of def.pins) {
-    if (pin.name === '*') continue
     const addr       = getComponentPinHole(placed, pin, def)
     const { x: px, y: py } = getHolePosition(addr)
 

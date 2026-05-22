@@ -38,7 +38,6 @@ export function getAllOccupiedHoles(state: AppState, excludeComponentId?: string
     const def = state.componentLibrary.find(d => d.id === placed.defId)
     if (!def) continue
     for (const pin of def.pins) {
-      if (pin.name === '*') continue
       occupied.add(getComponentPinHole(placed, pin, def))
     }
   }

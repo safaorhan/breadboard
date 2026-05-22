@@ -56,7 +56,6 @@ export function analyzeNets(state: AppState): Net[] {
     if (!def) continue
     const componentName = placed.label ?? def.name
     for (const pin of def.pins) {
-      if (pin.name === '*') continue
       const hole = getComponentPinHole(placed, pin, def)
       const root = uf.find(hole)
       if (!netMap.has(root)) netMap.set(root, [])

@@ -1,0 +1,12 @@
+{
+  "id": "hcsr04",
+  "name": "HC-SR04",
+  "colSpan": 16,
+  "rowSpan": 4,
+  "pins": [
+    { "name": "VCC",  "col": 6, "row": "top" },
+    { "name": "TRIG", "col": 7, "row": "top" },
+    { "name": "ECHO", "col": 8, "row": "top" },
+    { "name": "GND",  "col": 9, "row": "top" }
+  ]
+}

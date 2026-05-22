@@ -54,13 +54,12 @@ function getSVGPoint(e: MouseEvent): { x: number; y: number } {
   }
 }
 
-// Returns true if every real (non-*) pin lands on a valid main-grid row when the
+// Returns true if every pin lands on a valid main-grid row when the
 // component is anchored at `row` with the given rotation.
 function isValidAnchorRow(row: string, def: ComponentDef, rotated: boolean): boolean {
   const anchorYUnit = ROW_Y_UNITS[row]
-  const realPins = def.pins.filter(p => p.name !== '*')
-  if (realPins.length === 0) return true
-  for (const pin of realPins) {
+  if (def.pins.length === 0) return true
+  for (const pin of def.pins) {
     const side = rotated ? (pin.row === 'top' ? 'bottom' : 'top') : pin.row
     const targetYUnit = side === 'top' ? anchorYUnit : anchorYUnit + def.rowSpan
     if (rowFromYUnit(targetYUnit) === undefined) return false
@@ -109,7 +108,6 @@ function componentPinsFree(def: ComponentDef, anchorCol: number, anchorRow: stri
   const comp = excludeId ? state.placedComponents.find(c => c.id === excludeId) : undefined
   if (comp) placed.rotated = comp.rotated
   for (const pin of def.pins) {
-    if (pin.name === '*') continue
     if (occupied.has(getComponentPinHole(placed, pin, def))) return false
   }
   return true
