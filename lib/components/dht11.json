@@ -1,0 +1,11 @@
+{
+  "id": "dht11",
+  "name": "DHT11",
+  "colSpan": 7,
+  "rowSpan": 3,
+  "pins": [
+    { "name": "VCC",  "col": 2, "row": "top" },
+    { "name": "DATA", "col": 3, "row": "top" },
+    { "name": "GND",  "col": 4, "row": "top" }
+  ]
+}

@@ -519,8 +519,8 @@ function renderPlacedComponent(
 
     const effectiveRow = placed.rotated ? (pin.row === 'top' ? 'bottom' : 'top') : pin.row
     const labelY = effectiveRow === 'top'
-      ? py - HOLE_RADIUS - 2
-      : py + HOLE_RADIUS + 7
+      ? py - HOLE_RADIUS - 2.5
+      : py + HOLE_RADIUS + 4.5
 
     const label = svgEl('text')
     label.setAttribute('x', String(px))

@@ -1199,7 +1199,7 @@ body.projects-mode #topbar { display: flex; }
   pointer-events: none;
 }
 .pin-label {
-  font-size: 5px;
+  font-size: 3.5px;
   font-family: -apple-system, 'SF Mono', 'Menlo', monospace;
   pointer-events: none;
 }
