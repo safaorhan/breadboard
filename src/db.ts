@@ -3,7 +3,7 @@ import { PRESET_LIBRARY, PRESET_JUMPER_LIBRARY } from './components'
 
 const DB_NAME    = 'breadboard'
 const DB_VERSION = 3   // bump only for schema changes (new/removed stores, indexes)
-const SEED_VERSION = 16 // bump whenever lib/components or lib/jumper-sets content changes
+const SEED_VERSION = 18 // bump whenever lib/components or lib/jumper-sets content changes
 
 export interface Project {
   id:                string
