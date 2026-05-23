@@ -2,7 +2,7 @@ import type { ComponentDef, JumperSet, PlacedComponent, Wire } from './types'
 import { PRESET_LIBRARY, PRESET_JUMPER_LIBRARY } from './components'
 
 const DB_NAME    = 'breadboard'
-const DB_VERSION = 3   // bump only for schema changes (new/removed stores, indexes)
+const DB_VERSION = 4   // bump only for schema changes (new/removed stores, indexes)
 const SEED_VERSION = 20 // bump whenever lib/components or lib/jumper-sets content changes
 
 export interface Project {
@@ -52,6 +52,11 @@ function openDB(): Promise<void> {
           db.deleteObjectStore('jumperDefs')
         if (!db.objectStoreNames.contains('jumperSets'))
           db.createObjectStore('jumperSets', { keyPath: 'id' })
+      }
+
+      if (oldVersion < 4) {
+        if (!db.objectStoreNames.contains('exampleThumbnails'))
+          db.createObjectStore('exampleThumbnails', { keyPath: 'hash' })
       }
     }
 
@@ -127,6 +132,24 @@ export async function deleteJumperSet(id: string): Promise<void> {
 async function loadAllJumperSets(): Promise<StoredJumperSet[]> {
   const store = _db!.transaction('jumperSets', 'readonly').objectStore('jumperSets')
   return idbReq(store.getAll())
+}
+
+// ── Example thumbnails ────────────────────────────────────────────────────────
+
+export interface ExampleThumbnail {
+  hash:      string
+  dataUrl:   string
+  createdAt: number
+}
+
+export async function getExampleThumbnail(hash: string): Promise<ExampleThumbnail | null> {
+  const store = _db!.transaction('exampleThumbnails', 'readonly').objectStore('exampleThumbnails')
+  return (await idbReq(store.get(hash))) ?? null
+}
+
+export async function saveExampleThumbnail(hash: string, dataUrl: string): Promise<void> {
+  const store = _db!.transaction('exampleThumbnails', 'readwrite').objectStore('exampleThumbnails')
+  await idbReq(store.put({ hash, dataUrl, createdAt: Date.now() }))
 }
 
 // ── First-run seeding ─────────────────────────────────────────────────────────
