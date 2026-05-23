@@ -1,0 +1,58 @@
+{
+  "version": 1,
+  "name": "ESP32 with a screen and sensor",
+  "description": "ESP32 DevKit wired to an OLED display and a DHT11 temperature/humidity sensor.",
+  "createdAt": 1779388720195,
+  "placedComponents": [
+    {
+      "id": "b6a5869c-5929-4ba9-81fc-469dc59dee81",
+      "defId": "e2a899ca-2dcc-4da9-820d-1848252e7ca0",
+      "anchorCol": 1,
+      "anchorRow": "I",
+      "locked": true,
+      "hidden": false,
+      "rotated": false,
+      "colorIdx": 2,
+      "instanceNum": 1
+    },
+    {
+      "id": "d045d84b-4b67-4c62-9af3-10fd873a7ef0",
+      "defId": "oled",
+      "anchorCol": 21,
+      "anchorRow": "I",
+      "locked": true,
+      "hidden": false,
+      "rotated": false,
+      "colorIdx": 5,
+      "instanceNum": 1
+    },
+    {
+      "id": "523b0c19-2849-4f56-b7f4-9ad0c99e76b4",
+      "defId": "dht11",
+      "anchorCol": 32,
+      "anchorRow": "I",
+      "locked": false,
+      "hidden": false,
+      "rotated": false,
+      "colorIdx": 6,
+      "instanceNum": 1
+    }
+  ],
+  "wires": [
+    { "id": "b34bb7cd-9d8c-45ce-856b-48f716186b3c", "from": "J6",     "to": "top-:6"  },
+    { "id": "ac652493-0ab7-4654-ac38-0e1b71bbb494", "from": "top-:24","to": "J24"     },
+    { "id": "a9494da0-7ca0-4dc0-b1da-9d04dd045cb4", "from": "J25",    "to": "top+:25" },
+    { "id": "7d890729-eb9c-4242-a53a-3693233972dc", "from": "A17",    "to": "A26"     },
+    { "id": "3a42255b-1bee-4752-ba4e-e56d25ce31f5", "from": "C14",    "to": "C20"     },
+    { "id": "8b021603-bf74-4136-8f10-8b83fa2efd4e", "from": "D20",    "to": "D27"     },
+    { "id": "69a09731-b8e8-41dd-a29b-3a6351135f0d", "from": "J19",    "to": "top+:19" },
+    { "id": "0f51b603-7693-4732-a786-ff4f0d1f4378", "from": "J36",    "to": "top-:36" },
+    { "id": "8cc54816-d866-4dc3-9596-8107e8f4882e", "from": "J34",    "to": "top+:34" },
+    { "id": "be95c029-450f-4a14-b633-7e287c0e4a56", "from": "F27",    "to": "E27"     },
+    { "id": "80e69b49-7112-468e-a5dc-d13991ac0041", "from": "E26",    "to": "F26"     },
+    { "id": "c8045aa7-04f8-4cd4-b4ad-a1fee360bf65", "from": "J11",    "to": "J21"     },
+    { "id": "ee137575-e0e2-4442-92f5-77a3d57eb60a", "from": "H21",    "to": "H31"     },
+    { "id": "1934dc16-f3ac-4d36-a32a-4b1d0dbe0043", "from": "J31",    "to": "J35"     }
+  ],
+  "activeJumperSetId": "preset-jumper-set-common-140-piece"
+}
