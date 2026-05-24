@@ -1,12 +1,12 @@
 # Breadboard
 
-A browser-based tool for planning solderless breadboard circuits. Drop
-components onto a standard 63-column breadboard, draw jumpers between
-holes, and the colors of those jumpers are picked automatically from
-whichever physical jumper kit you tell the app you have. Projects live in
-your browser (IndexedDB) and can be exported to JSON to share or version.
+A breadboard planner that let's you create and share neat wiring plans:
 
-**Live: https://breadboard.safaorhan.com/**
+https://breadboard.safaorhan.com/
+
+You can define the jumper colors and lengths you have so that you don't have to search which jumper to use where to have exactly fitting wiring.
+
+You can share the wiring diagrams you have with your friends thanks to import and export projects feature.
 
 ![Breadboard screenshot — ESP32 + OLED + LoRa module wired on a breadboard](public/og-image.png)
 
