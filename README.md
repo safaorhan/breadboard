@@ -64,8 +64,7 @@ need to cut one." Switching the active jumper set re-colors every wire on
 the board.
 
 Click the **list** icon in the action bar to switch active sets or
-**Create jumper set** to build your own (give it a name, then add `length`
-+ `color` rows). Custom sets live in IndexedDB; the preset is reseeded
+**Create jumper set** to build your own (give it a name, then add `length` and `color` rows). Custom sets live in IndexedDB; the preset is reseeded
 from `lib/jumper-sets/` on every page load.
 
 ### Save, export, import
